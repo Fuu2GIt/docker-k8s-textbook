@@ -115,3 +115,17 @@ sudo systemctl is-active docker
 ```text
 wsl docker run --rm textbook-no-such-image:none
 ```
+
+## 第7章 ポートとネットワーク
+
+- 場所: Windows
+
+```text
+Invoke-WebRequest -Uri http://localhost:8000/ -UseBasicParsing
+```
+
+- 場所: Windows
+
+```text
+Invoke-WebRequest -Uri http://localhost:59999/ -UseBasicParsing
+```
