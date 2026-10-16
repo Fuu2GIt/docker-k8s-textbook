@@ -129,3 +129,41 @@ Invoke-WebRequest -Uri http://localhost:8000/ -UseBasicParsing
 ```text
 Invoke-WebRequest -Uri http://localhost:59999/ -UseBasicParsing
 ```
+
+## 第8章 データを残す
+
+- 場所: Windows
+
+```text
+New-Item -ItemType Directory -Force -Path "$HOME\docker-learn\ch08"
+```
+
+- 場所: Windows
+
+```text
+Set-Content -Path "$HOME\docker-learn\ch08\note.txt" -Value "ホストのファイル" -Encoding utf8
+```
+
+- 場所: Windows
+
+```text
+docker run --rm --mount "type=bind,source=$HOME\docker-learn\ch08,target=/data" busybox:1.37.0 cat /data/note.txt
+```
+
+- 場所: Windows
+
+```text
+Format-Hex -Path "$HOME\docker-learn\ch08\note.txt"
+```
+
+- 場所: Windows
+
+```text
+docker run --rm --mount "type=bind,source=$HOME\docker-learn\ch08\missing,target=/data" busybox:1.37.0 ls /data
+```
+
+- 場所: Windows
+
+```text
+Remove-Item -Recurse -Force -Path "$HOME\docker-learn\ch08"
+```
