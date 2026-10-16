@@ -1,20 +1,23 @@
 # 現状
 
-2026-10-16 時点です。作業は継続中です。
+2026-10-16 時点です。第1章から第21章まで、ローカルの `main` にあります。公開URLはありません。
 
-- 静的サイトの骨組みと第1章は、ローカルのブラウザで確認しました。幅 360px、OSタブ、検索、コピー、進捗の保存を含みます。第2章はビルドとリンク検査まで終わっています。ブラウザの再確認は、全章のあとにもう一度します。
-- Linux で実行したコマンドの出力は、各章の本文に貼ってあります。第2章の `systemctl is-active docker` は、この環境では systemd が無く失敗しました。成功時の `active` は未確認です。
-- Windows のコマンドは未確認です。一覧は `UNVERIFIED.md` です。
-- Docker Engine 29.9.1 は、この環境に入っています。デーモンは systemd が無いため、`dockerd` を直接起動しています。
-- GitHub にはログインしていません。`gh auth status` は未ログインで、トークンもありません。リポジトリ `docker-k8s-textbook` は、まだ作れていません。
+- `python3 scripts/check_site.py --complete` は成功しています。24ページ、第1章から第21章です。
+- ブラウザで `http://127.0.0.1:8765/` を開きました。幅 1280px と 360px で、章一覧、OSタブ、検索、進捗の保存、用語集、コマンド早見表を確認しました。コピーボタンは、ブラウザがクリップボードを許可すると「コピーしました」になり、コマンド文字列がコピーされます。
+- Linux で実行したコマンドの出力は、各章の本文に貼ってあります。第13章から第21章で新しく「未確認」になったコマンドはありません。
+- Windows の手順と、この環境で動かない `systemctl` は未確認です。一覧は `UNVERIFIED.md` です。対象は第1章、第2章、第7章、第8章、第12章です。
+- 公式ドキュメントへのリンクは開きました。テイントの旧URLは 404 だったので、`https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/` に直しました。`https://www.gnu.org/software/coreutils/uname` は 403 のままです。第1章にその旨を書いてあります。
+- kind のクラスタ `memo` は、第21章の片付けで消しました。`kind get clusters` は `No kind clusters found.` でした。もう一度通すときは、第12章から作ります。
+- この環境の kube-proxy は、確認のときだけ nftables に変えています。読者の手順には入れていません。理由は `DECISIONS.md` です。
+- GitHub にはログインしていません。`gh auth status` は未ログインです。リポジトリは作れていません。デバイス認証は開始していません。
 
 ## 公開するときにやること
 
-認証できるようになったら、次を実行します。
+認証できるようになったら、リポジトリのルートで次を実行します。
 
 1. `gh auth login`
 2. `gh repo create docker-k8s-textbook --public --source=. --remote=origin`
 3. `git push -u origin main`
 4. GitHub Pages を、`main` ブランチの `/docs` から公開する
 
-Pages の設定画面は、リポジトリの Settings、Pages です。Branch を `main`、Folder を `/docs` にします。
+Pages の設定画面は、リポジトリの Settings、Pages です。Branch を `main`、Folder を `/docs` にします。公開先は、その設定のあとで GitHub が示す URL です。このファイルには、まだ存在しない URL は書きません。
