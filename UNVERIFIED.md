@@ -167,3 +167,35 @@ docker run --rm --mount "type=bind,source=$HOME\docker-learn\ch08\missing,target
 ```text
 Remove-Item -Recurse -Force -Path "$HOME\docker-learn\ch08"
 ```
+
+## 第12章 ローカル環境を作る
+
+- 場所: Windows
+
+```text
+curl.exe -Lo .\kind-windows-amd64.exe https://kind.sigs.k8s.io/dl/v0.33.0/kind-windows-amd64
+```
+
+- 場所: Windows
+
+```text
+Move-Item .\kind-windows-amd64.exe c:\some-dir-in-your-PATH\kind.exe
+```
+
+- 場所: Windows
+
+```text
+curl.exe -LO "https://dl.k8s.io/release/v1.37.1/bin/windows/amd64/kubectl.exe"
+```
+
+- 場所: Windows
+
+```text
+curl.exe -LO "https://dl.k8s.io/v1.37.1/bin/windows/amd64/kubectl.exe.sha256"
+```
+
+- 場所: Windows
+
+```text
+$(Get-FileHash -Algorithm SHA256 .\kubectl.exe).Hash -eq $(Get-Content .\kubectl.exe.sha256)
+```

@@ -26,7 +26,7 @@
 </div>
 </header>
 <div class="layout">
-<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><span>Pod</span></li><li><span>Deploymentで複数台にする、更新する、ロールバックする</span></li><li><span>Serviceで公開する</span></li><li><span>ConfigMapとSecret</span></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="chapters/13.html" data-chapter="13">第13章 Pod</a></li><li><span>Deploymentで複数台にする、更新する、ロールバックする</span></li><li><span>Serviceで公開する</span></li><li><span>ConfigMapとSecret</span></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
 <main id="main">
 <h1>コマンド早見表</h1><p>各章の本文に出るコマンドです。ファイルの中身は載せていません。</p><h2 id="commands-01">第1章 <a href="chapters/01.html">コンテナとは何か</a></h2><pre data-lang="text"><code>Get-ComputerInfo -Property WindowsProductName</code></pre><pre data-lang="text"><code>Get-ComputerInfo -Property OsVersion</code></pre><pre data-lang="text"><code>uname -s</code></pre><pre data-lang="text"><code>uname -r</code></pre><pre data-lang="text"><code>Get-ComputerInfo -NotARealOption</code></pre><pre data-lang="text"><code>uname --not-a-real-option</code></pre><h2 id="commands-02">第2章 <a href="chapters/02.html">環境を整える</a></h2><pre data-lang="text"><code>wsl --version</code></pre><pre data-lang="text"><code>wsl --install</code></pre><pre data-lang="text"><code>wsl --update</code></pre><pre data-lang="text"><code>wsl.exe --set-default-version 2</code></pre><pre data-lang="text"><code>wsl.exe --list --online</code></pre><pre data-lang="text"><code>wsl.exe --install -d Ubuntu</code></pre><pre data-lang="text"><code>wsl.exe --set-version Ubuntu 2</code></pre><pre data-lang="text"><code>wsl.exe --list --verbose</code></pre><pre data-lang="text"><code>Start-Process &#x27;Docker Desktop Installer.exe&#x27; -Wait -ArgumentList &#x27;install&#x27;, &#x27;--user&#x27;</code></pre><pre data-lang="text"><code>cat /etc/os-release</code></pre><pre data-lang="text"><code>sudo apt update</code></pre><pre data-lang="text"><code>sudo apt install -y ca-certificates curl</code></pre><pre data-lang="text"><code>sudo install -m 0755 -d /etc/apt/keyrings</code></pre><pre data-lang="text"><code>sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc</code></pre><pre data-lang="text"><code>sudo chmod a+r /etc/apt/keyrings/docker.asc</code></pre><pre data-lang="text"><code>sudo tee /etc/apt/sources.list.d/docker.sources &lt;&lt;EOF
 Types: deb
@@ -245,9 +245,55 @@ nodes:
     listenAddress: &quot;127.0.0.1&quot;
 - role: worker
   image: kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5
-EOF</code></pre><pre data-lang="text"><code>docker pull kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5</code></pre><pre data-lang="text"><code>kind create cluster --name memo --config &quot;$HOME/docker-learn/ch12/kind.yaml&quot; --wait 5m</code></pre><pre data-lang="text"><code>kubectl cluster-info --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get nodes --context kind-memo</code></pre><pre data-lang="text"><code>kind create cluster --name memo</code></pre><pre data-lang="text"><code>kind get clusters</code></pre>
+EOF</code></pre><pre data-lang="text"><code>docker pull kindest/node:v1.37.0@sha256:a1ed56cfb0e7b93589bdf97c8cd566405a265939e3620fc4f5de89adff580ae5</code></pre><pre data-lang="text"><code>kind create cluster --name memo --config &quot;$HOME/docker-learn/ch12/kind.yaml&quot; --wait 5m</code></pre><pre data-lang="text"><code>kubectl cluster-info --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get nodes --context kind-memo</code></pre><pre data-lang="text"><code>kind create cluster --name memo</code></pre><pre data-lang="text"><code>kind get clusters</code></pre><h2 id="commands-13">第13章 <a href="chapters/13.html">Pod</a></h2><pre data-lang="text"><code>mkdir -p &quot;$HOME/docker-learn/ch13&quot; &amp;&amp; cd &quot;$HOME/docker-learn/ch13&quot;</code></pre><pre data-lang="text"><code>cat &gt; app.py &lt;&lt;&#x27;EOF&#x27;
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = os.environ.get(&quot;APP_MESSAGE&quot;, &quot;podから&quot;)
+        body = message.encode(&quot;utf-8&quot;)
+        self.send_response(200)
+        self.send_header(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+        self.send_header(&quot;Content-Length&quot;, str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main():
+    port = int(os.environ.get(&quot;PORT&quot;, &quot;8000&quot;))
+    server = HTTPServer((&quot;0.0.0.0&quot;, port), Handler)
+    print(f&quot;listening on {port}&quot;, flush=True)
+    server.serve_forever()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+EOF</code></pre><pre data-lang="text"><code>cat &gt; Dockerfile &lt;&lt;&#x27;EOF&#x27;
+FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app/app.py
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;app.py&quot;]
+EOF</code></pre><pre data-lang="text"><code>docker build --progress=plain -t memo:ch13 .</code></pre><pre data-lang="text"><code>kind load docker-image memo:ch13 --name memo</code></pre><pre data-lang="text"><code>kubectl create namespace memo --context kind-memo</code></pre><pre data-lang="text"><code>cat &gt; pod.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo
+  namespace: memo
+  labels:
+    app: memo
+spec:
+  containers:
+  - name: web
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
+EOF</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get pod memo --namespace memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl wait --for=condition=Ready pod/memo --namespace memo --timeout=60s --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get pod memo --namespace memo --context kind-memo -o wide</code></pre><pre data-lang="text"><code>kubectl logs memo --namespace memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl create -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl delete -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre>
 </main>
-<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#commands-01">第1章 コンテナとは何か</a></li><li><a class="depth-2" href="#commands-02">第2章 環境を整える</a></li><li><a class="depth-2" href="#commands-03">第3章 コマンドラインの基礎</a></li><li><a class="depth-2" href="#commands-04">第4章 はじめてのコンテナ</a></li><li><a class="depth-2" href="#commands-05">第5章 イメージとレイヤー</a></li><li><a class="depth-2" href="#commands-06">第6章 Dockerfileで自作イメージを作る</a></li><li><a class="depth-2" href="#commands-07">第7章 ポートとネットワーク</a></li><li><a class="depth-2" href="#commands-08">第8章 データを残す</a></li><li><a class="depth-2" href="#commands-09">第9章 Docker Compose</a></li><li><a class="depth-2" href="#commands-10">第10章 イメージを小さく安全にする</a></li><li><a class="depth-2" href="#commands-11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a class="depth-2" href="#commands-12">第12章 ローカル環境を作る</a></li></ol></details>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#commands-01">第1章 コンテナとは何か</a></li><li><a class="depth-2" href="#commands-02">第2章 環境を整える</a></li><li><a class="depth-2" href="#commands-03">第3章 コマンドラインの基礎</a></li><li><a class="depth-2" href="#commands-04">第4章 はじめてのコンテナ</a></li><li><a class="depth-2" href="#commands-05">第5章 イメージとレイヤー</a></li><li><a class="depth-2" href="#commands-06">第6章 Dockerfileで自作イメージを作る</a></li><li><a class="depth-2" href="#commands-07">第7章 ポートとネットワーク</a></li><li><a class="depth-2" href="#commands-08">第8章 データを残す</a></li><li><a class="depth-2" href="#commands-09">第9章 Docker Compose</a></li><li><a class="depth-2" href="#commands-10">第10章 イメージを小さく安全にする</a></li><li><a class="depth-2" href="#commands-11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a class="depth-2" href="#commands-12">第12章 ローカル環境を作る</a></li><li><a class="depth-2" href="#commands-13">第13章 Pod</a></li></ol></details>
 </div>
 <script src="assets/search-index.js"></script>
 <script src="assets/site.js"></script>

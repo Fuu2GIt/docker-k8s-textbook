@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第13章 Pod</title>
+<link rel="stylesheet" href="../assets/site.css">
+<script>try{document.documentElement.dataset.os=localStorage.getItem('docker-k8s-textbook-os')||'linux';}catch(e){document.documentElement.dataset.os='linux';}</script>
+</head>
+<body data-root="../">
+<a class="skip" href="#main">本文へ</a>
+<header class="site-header">
+<a class="brand" href="../index.html">DockerとKubernetesの教科書</a>
+<nav class="header-links" aria-label="関連ページ">
+<a href="../glossary.html">用語集</a>
+<a href="../commands.html">コマンド</a>
+</nav>
+<form class="search" role="search">
+<label class="visually-hidden" for="search">検索</label>
+<input id="search" type="search" placeholder="章のタイトルと本文を検索" autocomplete="off">
+<ul id="search-results" class="search-results"></ul>
+</form>
+<div class="os-switch" role="group" aria-label="手順のOS">
+<button type="button" data-os-choice="windows" aria-pressed="false">Windows</button>
+<button type="button" data-os-choice="linux" aria-pressed="false">Linux</button>
+</div>
+</header>
+<div class="layout">
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="../chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="../chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="../chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="../chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="../chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="../chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="../chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="../chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="../chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="../chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="../chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="../chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="../chapters/13.html" data-chapter="13" aria-current="page">第13章 Pod</a></li><li><span>Deploymentで複数台にする、更新する、ロールバックする</span></li><li><span>Serviceで公開する</span></li><li><span>ConfigMapとSecret</span></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<main id="main">
+<p class="part-kicker">第3部 Kubernetes</p><h1>第13章 Pod</h1><p class="meta">目安は約40分です。</p><h2 id="確認したバージョン">確認したバージョン</h2><p>2026-10-16 に、次を確認しました。</p><ul><li><a href="https://kubernetes.io/docs/concepts/workloads/pods/">Pods</a></li><li>このクラスタの <code>kubectl explain pod.spec.containers.imagePullPolicy</code></li><li><code>kubectl options</code> の <code>--context</code> と <code>-n</code></li><li><code>kubectl apply --help</code>、<code>kubectl get --help</code>、<code>kubectl wait --help</code>、<code>kubectl logs --help</code>、<code>kubectl delete --help</code></li><li>kind v0.33.0 の <code>kind load docker-image --help</code></li></ul><p>クラスタは、第12章で作った <code>memo</code> です。コンテキストは <code>kind-memo</code> です。</p><h2 id="この章のゴール">この章のゴール</h2><ul><li>自作のイメージを、kind のノードへ載せることができる</li><li><a href="../glossary.html#term-マニフェスト">マニフェスト</a> から <a href="../glossary.html#term-Pod">Pod</a> を1つ作り、Running になるまで待てる</li><li><a href="../glossary.html#term-名前空間">名前空間</a> の中だけを見て、作った Pod を消すことができる</li></ul><h2 id="前提">前提</h2><p>第6章のイメージの作り方と、第12章のクラスタを使います。クラスタ名は <code>memo</code> です。<code>kubectl</code> には、毎回 <code>--context kind-memo</code> を付けます。</p><p>実行場所は、Ubuntu の端末です。Windows では、<a href="../glossary.html#term-WSL2">WSL2</a> の Ubuntu です。この章のコマンドは、どちらも同じです。</p><p><a href="../glossary.html#term-ラベル">ラベル</a> は、リソースに付ける名前と値の印です。あとから、その印で選びます。この章では <code>app: memo</code> を付けます。</p><h2 id="たとえ話">たとえ話</h2><p>1人用の机を想像してください。</p><p>机の上に、アプリの入った箱を1つ置きます。その机が Pod です。部屋の名前が名前空間です。机の置き方を書いた紙が、マニフェストです。</p><h2 id="手を動かす">手を動かす</h2><ol><li>作業ディレクトリを作り、そこへ移動します。</li></ol><pre data-lang="bash"><code>mkdir -p &quot;$HOME/docker-learn/ch13&quot; &amp;&amp; cd &quot;$HOME/docker-learn/ch13&quot;</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。Windows では、WSL2 の Ubuntu です。 <code>mkdir -p</code> は、ディレクトリを作ります。 <code>&amp;&amp;</code> は、左が成功したときだけ右を実行します。 <code>cd</code> は、カレントディレクトリを移します。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>Permission denied</code> なら、ホーム以外です。コマンドをコピーし直してください。</p><ol><li>アプリを作ります。</li></ol><pre data-lang="bash"><code>cat &gt; app.py &lt;&lt;&#x27;EOF&#x27;
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = os.environ.get(&quot;APP_MESSAGE&quot;, &quot;podから&quot;)
+        body = message.encode(&quot;utf-8&quot;)
+        self.send_response(200)
+        self.send_header(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+        self.send_header(&quot;Content-Length&quot;, str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main():
+    port = int(os.environ.get(&quot;PORT&quot;, &quot;8000&quot;))
+    server = HTTPServer((&quot;0.0.0.0&quot;, port), Handler)
+    print(f&quot;listening on {port}&quot;, flush=True)
+    server.serve_forever()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch13</code> です。第6章と同じ、ファイルを作る書き方です。返る文字の初期値は <code>podから</code> です。<code>APP_MESSAGE</code> という <a href="../glossary.html#term-環境変数">環境変数</a> があれば、その文字を返します。同じファイルを <code>samples/ch13/app.py</code> に置いてあります。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 Python のコードが画面に出たら、<code>&gt;</code> が抜けています。<code>cat</code> から <code>EOF</code> までコピーし直してください。</p><pre data-lang="python"><code>import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = os.environ.get(&quot;APP_MESSAGE&quot;, &quot;podから&quot;)
+        body = message.encode(&quot;utf-8&quot;)
+        self.send_response(200)
+        self.send_header(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+        self.send_header(&quot;Content-Length&quot;, str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main():
+    port = int(os.environ.get(&quot;PORT&quot;, &quot;8000&quot;))
+    server = HTTPServer((&quot;0.0.0.0&quot;, port), Handler)
+    print(f&quot;listening on {port}&quot;, flush=True)
+    server.serve_forever()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre><ol><li>Dockerfile を作ります。</li></ol><pre data-lang="bash"><code>cat &gt; Dockerfile &lt;&lt;&#x27;EOF&#x27;
+FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app/app.py
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;app.py&quot;]
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。土台は <code>python:3.12-slim</code> です。<code>CMD</code> は <code>python app.py</code> です。同じファイルを <code>samples/ch13/Dockerfile</code> に置いてあります。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 Dockerfile の中身が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="dockerfile"><code>FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app/app.py
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;app.py&quot;]</code></pre><ol><li>イメージをビルドします。</li></ol><pre data-lang="bash"><code>docker build --progress=plain -t memo:ch13 .</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch13</code> です。 <code>-t memo:ch13</code> は、イメージの名前です。 <code>.</code> は、今のディレクトリを材料にします。 <code>--progress=plain</code> は、進行を行のログにします。</p><p>期待する出力。</p><pre data-lang="text"><code>#0 building with &quot;default&quot; instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 133B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 712B done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#5 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 done
+#5 DONE 0.0s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [3/3] COPY app.py /app/app.py
+#7 DONE 0.0s
+
+#8 exporting to image
+#8 exporting layers 0.0s done
+#8 exporting manifest sha256:d447b5e7758aed59a87d03afca895df7fd89040adf2443b4ba8cb06d029db63a done
+#8 exporting config sha256:0abe03a3f7aa36b9d02dbcb13aff733253ead5b1f72a0b0bcb481ca5abb8d333 done
+#8 exporting attestation manifest sha256:afedac3e5c215e6e243d5a5183ece15ce647e559610b78d2e5bcab7659b9043a done
+#8 exporting manifest list sha256:a5ab2fd5a7e1842d737b4a6fe941218c59ffcb6e258a729543e246a5f30a31c1 done
+#8 naming to docker.io/library/memo:ch13 done
+#8 unpacking to docker.io/library/memo:ch13 done
+#8 DONE 0.0s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。秒数と sha256 は違ってよいです。 <code>naming to docker.io/library/memo:ch13</code> が出てください。</p><p>出力が違うとき。 <code>failed to solve</code> なら、カレントディレクトリが <code>ch13</code> かを <code>pwd</code> で確認してください。</p><ol><li>イメージを kind のノードへ載せます。</li></ol><pre data-lang="bash"><code>kind load docker-image memo:ch13 --name memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kind load docker-image</code> は、手元の Docker イメージをノードへコピーします。 <code>--name</code> は、help ではクラスタの名前です。省略すると <code>kind</code> です。ここでは <code>memo</code> です。ノードの中にイメージが無いと、Pod は外から取得しにいきます。手元の <code>memo:ch13</code> は外に無いので、先に載せます。</p><p>期待する出力。</p><pre data-lang="text"><code>Image: &quot;memo:ch13&quot; with ID &quot;sha256:a5ab2fd5a7e1842d737b4a6fe941218c59ffcb6e258a729543e246a5f30a31c1&quot; not yet present on node &quot;memo-control-plane&quot;, loading...
+Image: &quot;memo:ch13&quot; with ID &quot;sha256:a5ab2fd5a7e1842d737b4a6fe941218c59ffcb6e258a729543e246a5f30a31c1&quot; not yet present on node &quot;memo-worker&quot;, loading...</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。sha256 は違ってよいです。 <code>memo-control-plane</code> と <code>memo-worker</code> の両方に、<code>loading</code> の行が出てください。</p><p>出力が違うとき。 <code>unknown cluster</code> なら、クラスタ名が <code>memo</code> ではありません。<code>kind get clusters</code> を見てください。</p><ol><li>名前空間を作ります。</li></ol><pre data-lang="bash"><code>kubectl create namespace memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl create namespace</code> は、名前空間を作ります。引数 <code>memo</code> は、その名前です。 <code>--context kind-memo</code> は、<code>kubectl options</code> では、使う kubeconfig のコンテキストです。名前空間は、名前の衝突を部屋で分ける仕組みです。公式の説明では、複数の名前空間を使うことは任意です。</p><p>期待する出力。</p><pre data-lang="text"><code>namespace/memo created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>AlreadyExists</code> なら、すでに作ってあります。失敗ではありません。次へ進んでください。</p><ol><li>Pod のマニフェストを作ります。</li></ol><pre data-lang="bash"><code>cat &gt; pod.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo
+  namespace: memo
+  labels:
+    app: memo
+spec:
+  containers:
+  - name: web
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch13</code> です。同じファイルを <code>samples/ch13/pod.yaml</code> に置いてあります。</p><p><code>apiVersion: v1</code> と <code>kind: Pod</code> は、これが Pod の定義だと API に伝えます。 <code>metadata.name</code> は、Pod の名前 <code>memo</code> です。 <code>metadata.namespace</code> は、入れる名前空間です。 <code>labels</code> の <code>app: memo</code> は、ラベルです。 <code>containers</code> は、Pod の中で動かすコンテナの一覧です。公式の Pod の説明では、Pod は作って管理できる計算の最小単位です。 <code>image: memo:ch13</code> は、手順4のイメージです。 <code>imagePullPolicy: IfNotPresent</code> は、このクラスタの <code>kubectl explain</code> では、ディスクにイメージが無いときだけ取得します。 <code>:latest</code> を付けないので、既定も IfNotPresent ですが、明示しています。 <code>containerPort: 8000</code> は、コンテナが待つポートの宣言です。これだけでは、自分のパソコンへは公開しません。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 YAML が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="yaml"><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: memo
+  namespace: memo
+  labels:
+    app: memo
+spec:
+  containers:
+  - name: web
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000</code></pre><ol><li>Pod を作ります。</li></ol><pre data-lang="bash"><code>kubectl apply -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl apply</code> は、ファイルの定義をクラスタへ反映します。無ければ作ります。 <code>-f</code> は、<code>kubectl apply --help</code> では、ファイル名です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>namespaces &quot;memo&quot; not found</code> なら、手順6が終わっていません。名前空間を作ってからやり直してください。</p><ol><li>できた直後の状態を見ます。</li></ol><pre data-lang="bash"><code>kubectl get pod memo --namespace memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl get</code> は、リソースの一覧を出します。 <code>pod memo</code> は、Pod の名前です。 <code>--namespace</code> は、<code>kubectl options</code> では、この操作の名前空間です。短い書き方は <code>-n</code> です。このコマンドは、長い書き方を使います。 <code>--context</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME   READY   STATUS              RESTARTS   AGE
+memo   0/1     ContainerCreating   0          0s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。AGE は違ってよいです。この実行では、STATUS が <code>ContainerCreating</code> で、READY は <code>0/1</code> でした。イメージを展開している途中です。</p><p>出力が違うとき。 すでに <code>Running</code> なら、展開が終わっています。次へ進んでください。 <code>ErrImagePull</code> なら、手順5の <code>kind load</code> が終わっていません。もう一度載せてから、Pod を消して作り直してください。</p><ol><li>Running になるまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl wait --for=condition=Ready pod/memo --namespace memo --timeout=60s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl wait</code> は、条件を満たすまで待ちます。 <code>--for=condition=Ready</code> は、help の例にある、Ready になるまで待つ指定です。 <code>pod/memo</code> は、種類と名前です。 <code>--timeout=60s</code> は、help の例では、待つ上限です。 <code>60s</code> は 60 秒です。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo condition met</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>timed out</code> なら、60 秒で Ready になりませんでした。<code>kubectl get pod memo --namespace memo --context kind-memo</code> で STATUS を見てください。 <code>ImagePullBackOff</code> なら、イメージがノードにありません。</p><ol><li>載ったノードを見ます。</li></ol><pre data-lang="bash"><code>kubectl get pod memo --namespace memo --context kind-memo -o wide</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>-o wide</code> は、<code>kubectl get --help</code> の例では、ノード名などの列を足す指定です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME   READY   STATUS    RESTARTS   AGE   IP           NODE          NOMINATED NODE   READINESS GATES
+memo   1/1     Running   0          1s    10.244.1.2   memo-worker   &lt;none&gt;           &lt;none&gt;</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。IP と AGE は違ってよいです。READY が <code>1/1</code>、STATUS が <code>Running</code>、NODE が <code>memo-worker</code> であることは、この実行ではそうでした。コントロールプレーンには、通常の Pod を載せない印があるため、ワーカーへ載ります。その印は第18章で見ます。</p><p>出力が違うとき。 NODE が <code>memo-control-plane</code> でも、Running なら動作は同じです。 <code>Pending</code> のままなら、ノードが NotReady です。<code>kubectl get nodes --context kind-memo</code> を見てください。</p><ol><li>ログを見ます。</li></ol><pre data-lang="bash"><code>kubectl logs memo --namespace memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl logs</code> は、コンテナのログのスナップショットを出します。引数は Pod の名前です。コンテナが1つなら、コンテナ名は要りません。</p><p>期待する出力。</p><p>何も表示されませんでした。2026-10-16 にこの執筆環境で、Ready の直後に実行し、終了ステータスは 0 でした。起動の行は、このタイミングでは出ていません。</p><p>出力が違うとき。 <code>listening on 8000</code> が出ても、失敗ではありません。アプリがその行を出したあとです。 <code>Error from server</code> なら、Pod の名前が違います。</p><h2 id="何が起きたか">何が起きたか</h2><p>マニフェストを apply すると、API サーバーが Pod を記録します。スケジューラがノードを選び、そのノードの kubelet がコンテナを起動します。この実行では、選ばれたノードは <code>memo-worker</code> でした。</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" role="img" aria-label="マニフェストからPodがワーカーノードで動く">
+  <title>Pod memo</title>
+  <rect width="720" height="260" fill="#0B1220"/>
+  <rect x="24" y="36" width="200" height="180" rx="8" fill="#111827" stroke="#60A5FA"/>
+  <text x="124" y="80" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">pod.yaml</text>
+  <text x="124" y="116" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">名前空間 memo</text>
+  <text x="124" y="148" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">イメージ memo:ch13</text>
+  <path d="M230 126 H310" stroke="#60A5FA" stroke-width="3"/>
+  <path d="M300 118 L316 126 L300 134" fill="#60A5FA"/>
+  <rect x="320" y="36" width="376" height="180" rx="8" fill="#111827" stroke="#1F2937"/>
+  <text x="508" y="72" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">ノード memo-worker</text>
+  <rect x="360" y="96" width="296" height="88" rx="8" fill="#172554" stroke="#60A5FA"/>
+  <text x="508" y="132" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">Pod memo</text>
+  <text x="508" y="160" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">コンテナ web が 8000 番で待つ</text>
+</svg><p>左の紙がマニフェストです。右のノードの中で、Pod が1つ動きます。自分のパソコンの 8000 番へは、まだつながっていません。</p><h2 id="壊してみる">壊してみる</h2><p>同じ Pod を、create でもう一度作ります。</p><ol><li>既存の定義で create します。</li></ol><pre data-lang="bash"><code>kubectl create -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl create</code> は、新しく作ります。すでに同じ名前があると、apply と違い、エラーで止まります。 <code>-f</code> は、ファイル名です。</p><p>期待する出力。</p><pre data-lang="text"><code>Error from server (AlreadyExists): error when creating &quot;/home/ubuntu/docker-learn/ch13/pod.yaml&quot;: pods &quot;memo&quot; already exists</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 1 でした。パスの <code>/home/ubuntu</code> は、この環境のホームです。自分のホーム名に変わります。 <code>AlreadyExists</code> と <code>pods &quot;memo&quot; already exists</code> が出てください。</p><p>出力が違うとき。 <code>pod/memo created</code> と出たら、先に Pod を消しています。手順8からやり直してください。</p><p><code>AlreadyExists</code> は、同じ名前が既にある、という意味です。Pod は、消えるまでその名前を占有します。</p><h2 id="確認テスト">確認テスト</h2><p>文章で答えてください。新しいコマンドを実行しなくても答えられます。</p><section class="quiz"><h3 id="問題1">問題1</h3><p>Pod は、Kubernetes では何の単位ですか。</p><details><summary>解答と解説</summary><p>作って管理できる計算の最小単位です。</p><p>公式の Pod の説明では、そう書かれています。この章では、その中にコンテナを1つ入れました。</p></details></section><section class="quiz"><h3 id="問題2">問題2</h3><p><code>imagePullPolicy: IfNotPresent</code> は、何をしますか。</p><details><summary>解答と解説</summary><p>ノードのディスクにイメージが無いときだけ、取得します。</p><p>このクラスタの explain では、その意味です。先に <code>kind load</code> したので、外のレジストリへ取りにいきません。</p></details></section><section class="quiz"><h3 id="問題3">問題3</h3><p>この Pod を、名前空間 memo の外の一覧に出すには、何が要りますか。</p><details><summary>解答と解説</summary><p><code>--namespace memo</code> か、<code>-n memo</code> です。</p><p>名前空間を指定しない get は、今の名前空間だけを見ます。この Pod の metadata.namespace は memo です。</p></details></section><h2 id="まとめ">まとめ</h2><ul><li><strong>Pod</strong>: Kubernetes で作って管理できる、計算の最小単位です。1つ以上のコンテナが、同じノードで動きます。</li><li><strong>名前空間</strong>: リソースの名前を分ける部屋です。この章の Pod は <code>memo</code> に入っています。</li><li><strong>マニフェスト</strong>: 望ましい状態を YAML で書いたファイルです。<code>kubectl apply -f</code> が、それをクラスタへ反映します。</li><li><strong>ラベル</strong>: リソースに付ける、名前と値の印です。この章では <code>app: memo</code> です。</li></ul><h2 id="片付け">片付け</h2><p>名前空間とイメージは残します。第14章で使います。Pod だけ消します。</p><ol><li>Pod を消します。</li></ol><pre data-lang="bash"><code>kubectl delete -f &quot;$HOME/docker-learn/ch13/pod.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl delete</code> は、リソースを消します。 <code>-f</code> は、<code>kubectl delete --help</code> の例では、ファイル名です。ファイルに書いた Pod を消します。名前空間 <code>memo</code> は、ファイルの対象ではないので残ります。</p><p>期待する出力。</p><pre data-lang="text"><code>pod &quot;memo&quot; deleted from memo namespace</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>NotFound</code> なら、すでに消えています。次の章へ進んでください。</p><label class="done"><input type="checkbox" data-done="13">この章を読み終えた</label><nav class="pager"><a class="prev" rel="prev" href="12.html"><small>前の章</small>第12章 ローカル環境を作る</a><span><small>次の章</small>これが最後の章です</span></nav>
+</main>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#確認したバージョン">確認したバージョン</a></li><li><a class="depth-2" href="#この章のゴール">この章のゴール</a></li><li><a class="depth-2" href="#前提">前提</a></li><li><a class="depth-2" href="#たとえ話">たとえ話</a></li><li><a class="depth-2" href="#手を動かす">手を動かす</a></li><li><a class="depth-2" href="#何が起きたか">何が起きたか</a></li><li><a class="depth-2" href="#壊してみる">壊してみる</a></li><li><a class="depth-2" href="#確認テスト">確認テスト</a></li><li><a class="depth-3" href="#問題1">問題1</a></li><li><a class="depth-3" href="#問題2">問題2</a></li><li><a class="depth-3" href="#問題3">問題3</a></li><li><a class="depth-2" href="#まとめ">まとめ</a></li><li><a class="depth-2" href="#片付け">片付け</a></li></ol></details>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo
+  namespace: memo
+  labels:
+    app: memo
+spec:
+  containers:
+  - name: web
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    ports:
+    - containerPort: 8000
