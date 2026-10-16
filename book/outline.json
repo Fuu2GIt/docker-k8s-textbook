@@ -1,0 +1,31 @@
+{
+  "parts": [
+    {"id": "1", "title": "準備と基礎"},
+    {"id": "2", "title": "Docker"},
+    {"id": "3", "title": "Kubernetes"},
+    {"id": "4", "title": "次のステップ"}
+  ],
+  "chapters": [
+    {"id": "01", "part": "1", "minutes": 25, "title": "コンテナとは何か", "summary": "仮想マシンとの違いを、図で見ます。"},
+    {"id": "02", "part": "1", "minutes": 50, "title": "環境を整える", "summary": "Docker Desktop、WSL2、Ubuntu への Docker Engine の導入と、動作確認をします。"},
+    {"id": "03", "part": "1", "minutes": 35, "title": "コマンドラインの基礎", "summary": "この教科書で使うコマンドだけを練習します。"},
+    {"id": "04", "part": "2", "minutes": 40, "title": "はじめてのコンテナ", "summary": "docker run、ps、stop、rm を使います。"},
+    {"id": "05", "part": "2", "minutes": 35, "title": "イメージとレイヤー", "summary": "イメージが層になっている様子を見ます。"},
+    {"id": "06", "part": "2", "minutes": 50, "title": "Dockerfileで自作イメージを作る", "summary": "小さなWebアプリをイメージにします。"},
+    {"id": "07", "part": "2", "minutes": 40, "title": "ポートとネットワーク", "summary": "コンテナの中のポートを、自分のパソコンから開きます。"},
+    {"id": "08", "part": "2", "minutes": 45, "title": "データを残す", "summary": "ボリュームとバインドマウントで、消えないデータを置きます。"},
+    {"id": "09", "part": "2", "minutes": 55, "title": "Docker Compose", "summary": "Webアプリとデータベースを、まとめて起動します。"},
+    {"id": "10", "part": "2", "minutes": 45, "title": "イメージを小さく安全にする", "summary": "マルチステージビルドと、非rootユーザーを使います。"},
+    {"id": "11", "part": "3", "minutes": 30, "title": "Kubernetesとは何か、なぜ必要か", "summary": "一台のDockerでは足りなくなる理由を見ます。"},
+    {"id": "12", "part": "3", "minutes": 45, "title": "ローカル環境を作る", "summary": "kind で、自分のパソコンにKubernetesを用意します。"},
+    {"id": "13", "part": "3", "minutes": 40, "title": "Pod", "summary": "Kubernetesで動かす最小の単位を作ります。"},
+    {"id": "14", "part": "3", "minutes": 50, "title": "Deploymentで複数台にする、更新する、ロールバックする", "summary": "台数を増やし、更新し、前の版に戻します。"},
+    {"id": "15", "part": "3", "minutes": 40, "title": "Serviceで公開する", "summary": "複数のPodへ、一つの入口から届くようにします。"},
+    {"id": "16", "part": "3", "minutes": 35, "title": "ConfigMapとSecret", "summary": "設定と秘密の値を、アプリから分けて置きます。"},
+    {"id": "17", "part": "3", "minutes": 40, "title": "永続ボリューム", "summary": "Podが消えても残るディスクを使います。"},
+    {"id": "18", "part": "3", "minutes": 45, "title": "障害を体験する", "summary": "Podを消し、ノードを止め、壊れた更新を出します。"},
+    {"id": "19", "part": "3", "minutes": 40, "title": "ヘルスチェックとリソース制限", "summary": "生きているかの確認と、使える量の上限を付けます。"},
+    {"id": "20", "part": "4", "minutes": 25, "title": "AWSへのつながり", "summary": "ECR、ECS、EKSが、ここまでのどれに対応するかを見ます。"},
+    {"id": "21", "part": "4", "minutes": 70, "title": "学習の進め方と、総合演習", "summary": "アプリを自分で作り、Docker化して、Kubernetesで動かします。"}
+  ]
+}
