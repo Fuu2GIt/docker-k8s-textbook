@@ -1,0 +1,23 @@
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: memo
+      PGPASSWORD: memo-pass
+      PGDATABASE: memo
+    depends_on:
+      - db
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: memo
+      POSTGRES_PASSWORD: memo-pass
+      POSTGRES_DB: memo
+    volumes:
+      - memo-db:/var/lib/postgresql/data
+volumes:
+  memo-db:
