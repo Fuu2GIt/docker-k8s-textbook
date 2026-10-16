@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第14章 Deploymentで複数台にする、更新する、ロールバックする</title>
+<link rel="stylesheet" href="../assets/site.css">
+<script>try{document.documentElement.dataset.os=localStorage.getItem('docker-k8s-textbook-os')||'linux';}catch(e){document.documentElement.dataset.os='linux';}</script>
+</head>
+<body data-root="../">
+<a class="skip" href="#main">本文へ</a>
+<header class="site-header">
+<a class="brand" href="../index.html">DockerとKubernetesの教科書</a>
+<nav class="header-links" aria-label="関連ページ">
+<a href="../glossary.html">用語集</a>
+<a href="../commands.html">コマンド</a>
+</nav>
+<form class="search" role="search">
+<label class="visually-hidden" for="search">検索</label>
+<input id="search" type="search" placeholder="章のタイトルと本文を検索" autocomplete="off">
+<ul id="search-results" class="search-results"></ul>
+</form>
+<div class="os-switch" role="group" aria-label="手順のOS">
+<button type="button" data-os-choice="windows" aria-pressed="false">Windows</button>
+<button type="button" data-os-choice="linux" aria-pressed="false">Linux</button>
+</div>
+</header>
+<div class="layout">
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="../chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="../chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="../chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="../chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="../chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="../chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="../chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="../chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="../chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="../chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="../chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="../chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="../chapters/13.html" data-chapter="13">第13章 Pod</a></li><li><a href="../chapters/14.html" data-chapter="14" aria-current="page">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><span>Serviceで公開する</span></li><li><span>ConfigMapとSecret</span></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<main id="main">
+<p class="part-kicker">第3部 Kubernetes</p><h1>第14章 Deploymentで複数台にする、更新する、ロールバックする</h1><p class="meta">目安は約50分です。</p><h2 id="確認したバージョン">確認したバージョン</h2><p>2026-10-16 に、次を確認しました。</p><ul><li><a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Deployments</a></li><li>このクラスタの <code>kubectl explain deployment.spec.replicas</code></li><li>このクラスタの <code>kubectl explain deployment.spec.selector</code></li><li>このクラスタの <code>kubectl explain deployment.spec.strategy.type</code></li><li><code>kubectl scale --help</code>、<code>kubectl rollout status --help</code>、<code>kubectl rollout undo --help</code>、<code>kubectl set image --help</code></li></ul><p>クライアントは kubectl v1.37.1 です。クラスタは Kubernetes v1.37.0 です。公式の Deployment の説明では、Deployment は Pod と ReplicaSet の宣言的な更新を提供する、と書かれています。</p><h2 id="この章のゴール">この章のゴール</h2><ul><li><a href="../glossary.html#term-Deployment">Deployment</a> で、同じ定義の <a href="../glossary.html#term-Pod">Pod</a> を複数同時に動かすことができる</li><li>イメージを差し替え、台数が揃うまで待つことができる</li><li><a href="../glossary.html#term-ロールバック">ロールバック</a> で、直前の定義へ戻すことができる</li></ul><h2 id="前提">前提</h2><p>第13章の名前空間 <code>memo</code> と、イメージ <code>memo:ch13</code> を使います。Pod 名 <code>memo</code> は、第13章の片付けで消してあります。同じ名前の Deployment を作っても、種類が違うので衝突しません。</p><p><a href="../glossary.html#term-レプリカ">レプリカ</a> は、同じ Pod の定義を同時に動かす数です。この章では、最初 2 です。</p><p><a href="../glossary.html#term-ReplicaSet">ReplicaSet</a> は、その数の Pod を保つリソースです。公式の説明では、Deployment が ReplicaSet を作り、ReplicaSet が Pod を作ります。Pod を1つずつ自分で作り直す必要はありません。</p><p>実行場所は、Ubuntu の端末です。Windows では、<a href="../glossary.html#term-WSL2">WSL2</a> の Ubuntu です。この章のコマンドは、どちらも同じです。</p><h2 id="たとえ話">たとえ話</h2><p>同じ注文を、厨房が2皿同時に出す様子を想像してください。</p><p>注文票が Deployment です。皿の枚数がレプリカです。新しいレシピに替えて、また前のレシピへ戻すのが、更新とロールバックです。</p><h2 id="手を動かす">手を動かす</h2><ol><li>作業ディレクトリを作り、そこへ移動します。</li></ol><pre data-lang="bash"><code>mkdir -p &quot;$HOME/docker-learn/ch14&quot; &amp;&amp; cd &quot;$HOME/docker-learn/ch14&quot;</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。Windows では、WSL2 の Ubuntu です。 <code>mkdir -p</code> は、ディレクトリを作ります。 <code>&amp;&amp;</code> は、左が成功したときだけ右を実行します。 <code>cd</code> は、カレントディレクトリを移します。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>Permission denied</code> なら、ホーム以外です。コマンドをコピーし直してください。</p><ol><li>返す文字を変えたアプリを作ります。</li></ol><pre data-lang="bash"><code>cat &gt; app.py &lt;&lt;&#x27;EOF&#x27;
+import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = os.environ.get(&quot;APP_MESSAGE&quot;, &quot;更新した&quot;)
+        body = message.encode(&quot;utf-8&quot;)
+        self.send_response(200)
+        self.send_header(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+        self.send_header(&quot;Content-Length&quot;, str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main():
+    port = int(os.environ.get(&quot;PORT&quot;, &quot;8000&quot;))
+    server = HTTPServer((&quot;0.0.0.0&quot;, port), Handler)
+    print(f&quot;listening on {port}&quot;, flush=True)
+    server.serve_forever()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch14</code> です。第13章と同じアプリで、文字の初期値だけ <code>更新した</code> です。<code>APP_MESSAGE</code> という <a href="../glossary.html#term-環境変数">環境変数</a> があれば、その文字を返します。同じファイルを <code>samples/ch14/app.py</code> に置いてあります。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch14/app.py</code> とバイト単位で一致しました。</p><p>出力が違うとき。 Python のコードが画面に出たら、<code>&gt;</code> が抜けています。<code>cat</code> から <code>EOF</code> までコピーし直してください。</p><pre data-lang="python"><code>import os
+from http.server import BaseHTTPRequestHandler, HTTPServer
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        message = os.environ.get(&quot;APP_MESSAGE&quot;, &quot;更新した&quot;)
+        body = message.encode(&quot;utf-8&quot;)
+        self.send_response(200)
+        self.send_header(&quot;Content-Type&quot;, &quot;text/plain; charset=utf-8&quot;)
+        self.send_header(&quot;Content-Length&quot;, str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def main():
+    port = int(os.environ.get(&quot;PORT&quot;, &quot;8000&quot;))
+    server = HTTPServer((&quot;0.0.0.0&quot;, port), Handler)
+    print(f&quot;listening on {port}&quot;, flush=True)
+    server.serve_forever()
+
+
+if __name__ == &quot;__main__&quot;:
+    main()</code></pre><ol><li>Dockerfile を作ります。</li></ol><pre data-lang="bash"><code>cat &gt; Dockerfile &lt;&lt;&#x27;EOF&#x27;
+FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app/app.py
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;app.py&quot;]
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。中身は第13章と同じです。同じファイルを <code>samples/ch14/Dockerfile</code> に置いてあります。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch14/Dockerfile</code> とバイト単位で一致しました。</p><p>出力が違うとき。 Dockerfile の中身が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="dockerfile"><code>FROM python:3.12-slim
+WORKDIR /app
+COPY app.py /app/app.py
+EXPOSE 8000
+CMD [&quot;python&quot;, &quot;app.py&quot;]</code></pre><ol><li>新しいイメージをビルドします。</li></ol><pre data-lang="bash"><code>docker build --progress=plain -t memo:ch14 .</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch14</code> です。 <code>-t memo:ch14</code> は、イメージの名前です。 <code>.</code> は、今のディレクトリを材料にします。 <code>--progress=plain</code> は、進行を行のログにします。</p><p>期待する出力。</p><pre data-lang="text"><code>#0 building with &quot;default&quot; instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 133B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim
+#2 DONE 0.0s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [internal] load build context
+#4 transferring context: 715B done
+#4 DONE 0.0s
+
+#5 [1/3] FROM docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1
+#5 resolve docker.io/library/python:3.12-slim@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1 done
+#5 DONE 0.0s
+
+#6 [2/3] WORKDIR /app
+#6 CACHED
+
+#7 [3/3] COPY app.py /app/app.py
+#7 DONE 0.1s
+
+#8 exporting to image
+#8 exporting layers 0.0s done
+#8 exporting manifest sha256:5dc8db792c302175627071458e2a458957159dc71f16acdace0965bcf26e75da done
+#8 exporting config sha256:0858b9f6bdfb12273222c7e785ee9ae1d0b7afb1f568f737f9c33de615251cd4 done
+#8 exporting attestation manifest sha256:5d555c7baa5af61839880b1659422a7c2f22d8c31c460dbc9341f55b1fd1c401 done
+#8 exporting manifest list sha256:46a8516e3852340b8e6925bbdd2254c97d56ce82b7dab37f71e8fafdb3067c4b done
+#8 naming to docker.io/library/memo:ch14
+#8 naming to docker.io/library/memo:ch14 done
+#8 unpacking to docker.io/library/memo:ch14 done
+#8 DONE 0.0s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。秒数と sha256 は違ってよいです。 <code>naming to docker.io/library/memo:ch14</code> が出てください。</p><p>出力が違うとき。 <code>failed to solve</code> なら、カレントディレクトリが <code>ch14</code> かを <code>pwd</code> で確認してください。</p><ol><li>イメージを kind のノードへ載せます。</li></ol><pre data-lang="bash"><code>kind load docker-image memo:ch14 --name memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kind load docker-image</code> は、手元の Docker イメージをノードへコピーします。 <code>--name memo</code> は、第12章のクラスタです。<code>memo:ch13</code> は第13章で載せ済みです。この手順は <code>memo:ch14</code> だけを載せます。</p><p>期待する出力。</p><pre data-lang="text"><code>Image: &quot;memo:ch14&quot; with ID &quot;sha256:46a8516e3852340b8e6925bbdd2254c97d56ce82b7dab37f71e8fafdb3067c4b&quot; not yet present on node &quot;memo-control-plane&quot;, loading...
+Image: &quot;memo:ch14&quot; with ID &quot;sha256:46a8516e3852340b8e6925bbdd2254c97d56ce82b7dab37f71e8fafdb3067c4b&quot; not yet present on node &quot;memo-worker&quot;, loading...</code></pre><p>この出力は、2026-10-16 にこの執筆環境で、上のコマンドだけを実行した結果です。終了ステータスは 0 でした。sha256 は違ってよいです。両方のノードに <code>loading</code> の行が出てください。</p><p>出力が違うとき。 <code>unknown cluster</code> なら、クラスタ名が <code>memo</code> ではありません。すでに載っているノードでは、<code>not yet present</code> の行が出ないことがあります。終了ステータスが 0 なら、次へ進んでください。</p><ol><li>Deployment のマニフェストを作ります。</li></ol><pre data-lang="bash"><code>cat &gt; deployment.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memo
+  namespace: memo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: memo
+  template:
+    metadata:
+      labels:
+        app: memo
+    spec:
+      containers:
+      - name: web
+        image: memo:ch13
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。カレントディレクトリは <code>$HOME/docker-learn/ch14</code> です。同じファイルを <code>samples/ch14/deployment.yaml</code> に置いてあります。</p><p><code>apiVersion: apps/v1</code> と <code>kind: Deployment</code> は、これが Deployment だと API に伝えます。 <code>metadata.name</code> は <code>memo</code> です。 <code>metadata.namespace</code> は <code>memo</code> です。 <code>spec.replicas</code> は、このクラスタの explain では、望ましい Pod の数です。指定が無いときの既定は 1 です。ここでは 2 です。 <code>selector.matchLabels</code> は、explain では、どの Pod をこの Deployment の対象にするかのラベルです。Pod テンプレートのラベルと一致している必要があります。ここでは <code>app: memo</code> です。 <code>template</code> は、作る Pod の型です。 <code>image: memo:ch13</code> は、第13章のイメージです。更新は、あとから <code>memo:ch14</code> へ差し替えます。 <code>imagePullPolicy: IfNotPresent</code> は、第13章と同じく、ノードにイメージが無いときだけ取得します。</p><p><code>spec.strategy.type</code> は、このクラスタの explain では、既定が <code>RollingUpdate</code> です。古い ReplicaSet を少しずつ減らし、新しい ReplicaSet を少しずつ増やします。このファイルでは strategy を書いていないので、その既定です。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch14/deployment.yaml</code> とバイト単位で一致しました。</p><p>出力が違うとき。 YAML が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="yaml"><code>apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memo
+  namespace: memo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: memo
+  template:
+    metadata:
+      labels:
+        app: memo
+    spec:
+      containers:
+      - name: web
+        image: memo:ch13
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000</code></pre><ol><li>Deployment を作ります。</li></ol><pre data-lang="bash"><code>kubectl apply -f &quot;$HOME/docker-learn/ch14/deployment.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl apply</code> は、ファイルの定義をクラスタへ反映します。無ければ作ります。 <code>-f</code> は、ファイル名です。 <code>--context kind-memo</code> は、接続先です。この執筆環境では、同じ内容の <code>samples/ch14/deployment.yaml</code> を apply しました。出力にファイルのパスは含まれません。</p><p>期待する出力。</p><pre data-lang="text"><code>deployment.apps/memo created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>configured</code> と出たら、すでに同じ名前があります。この章の続きは、新規に作ったときの出力です。一度消してからやり直すと、次の章の入口も消えることがあります。<code>created</code> でなくても、次の <code>rollout status</code> が成功なら先へ進んでください。</p><ol><li>2台が揃うまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl rollout status deployment/memo -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl rollout status</code> は、help では、最新のロールアウトが終わるまで状態を見ます。 <code>deployment/memo</code> は、種類と名前です。 <code>-n memo</code> は、名前空間です。 <code>--timeout=90s</code> は、help では、待つ上限です。 <code>0s</code> は待たない、という意味で、それ以外は <code>1s</code> や <code>2m</code> のように単位が要ります。 <code>90s</code> は 90 秒です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>Waiting for deployment &quot;memo&quot; rollout to finish: 0 of 2 updated replicas are available...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 of 2 updated replicas are available...
+deployment &quot;memo&quot; successfully rolled out</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。途中の行数は違ってよいです。最後が <code>deployment &quot;memo&quot; successfully rolled out</code> であれば成功です。</p><p>出力が違うとき。 <code>timed out</code> なら、90 秒で揃いませんでした。<code>kubectl get pods -n memo --context kind-memo</code> で STATUS を見てください。 <code>ErrImagePull</code> なら、手順5の <code>kind load</code> が終わっていません。</p><ol><li>Deployment と Pod を見ます。</li></ol><pre data-lang="bash"><code>kubectl get deployment,pods -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl get</code> は、リソースの一覧を出します。 <code>deployment,pods</code> は、Deployment と Pod を続けて出します。 <code>-n memo</code> は、名前空間です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/memo   2/2     2            2           1s
+
+NAME                        READY   STATUS    RESTARTS   AGE
+pod/memo-8444ddd4f6-ngn42   1/1     Running   0          1s
+pod/memo-8444ddd4f6-x5lnq   1/1     Running   0          1s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。AGE と Pod の名前は違ってよいです。Deployment の READY が <code>2/2</code> で、Running の Pod が2つあることを、この実行では確認しました。種類を2つ指定したので、NAME の列に <code>deployment.apps/</code> と <code>pod/</code> が付いています。</p><p>出力が違うとき。 READY が <code>1/2</code> のままなら、まだ起動中です。手順8を、もう一度実行してください。</p><ol><li>レプリカを3にします。</li></ol><pre data-lang="bash"><code>kubectl scale deployment/memo --replicas=3 -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl scale</code> は、レプリカの数を変えます。 <code>--replicas</code> は、help では、新しい望ましい数です。指定が必要です。 <code>3</code> は、Pod を3つにする、という意味です。 <code>deployment/memo</code> は、対象です。 <code>-n memo</code> は、名前空間です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>deployment.apps/memo scaled</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>not found</code> なら、名前空間か名前が違います。手順7から見直してください。</p><ol><li>3台が揃うまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl rollout status deployment/memo -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。手順8と同じコマンドです。今度は、レプリカ3の完了を待ちます。</p><p>期待する出力。</p><pre data-lang="text"><code>Waiting for deployment &quot;memo&quot; rollout to finish: 2 of 3 updated replicas are available...
+deployment &quot;memo&quot; successfully rolled out</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。途中の行は違ってよいです。最後の <code>successfully rolled out</code> を確認してください。</p><p>出力が違うとき。 <code>timed out</code> なら、<code>kubectl get pods -n memo --context kind-memo</code> で、Running が3つかを見てください。</p><ol><li>Pod が3つかを見ます。</li></ol><pre data-lang="bash"><code>kubectl get pods -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl get pods</code> は、Pod の一覧です。 <code>-n memo</code> は、名前空間です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME                    READY   STATUS    RESTARTS   AGE
+memo-8444ddd4f6-jvnnk   1/1     Running   0          0s
+memo-8444ddd4f6-ngn42   1/1     Running   0          1s
+memo-8444ddd4f6-x5lnq   1/1     Running   0          1s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。名前と AGE は違ってよいです。この実行では、Running が3つでした。名前の途中の <code>8444ddd4f6</code> は、同じ ReplicaSet から作られた印です。3つとも同じでした。</p><p>出力が違うとき。 2つのままなら、手順10の scale が反映されていません。コマンドをコピーし直してください。</p><ol><li>イメージを <code>memo:ch14</code> に差し替えます。</li></ol><pre data-lang="bash"><code>kubectl set image deployment/memo web=memo:ch14 -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl set image</code> は、help では、既存リソースのコンテナのイメージを更新します。 <code>deployment/memo</code> は、対象です。 <code>web=memo:ch14</code> は、コンテナ名 <code>web</code> のイメージを <code>memo:ch14</code> にする、という指定です。help の形は <code>CONTAINER_NAME=CONTAINER_IMAGE</code> です。 <code>-n memo</code> は、名前空間です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>deployment.apps/memo image updated</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>container &quot;web&quot; not found</code> のようなエラーなら、コンテナ名が違います。マニフェストの <code>name: web</code> と揃えてください。</p><ol><li>差し替えが終わるまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl rollout status deployment/memo -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。新しい ReplicaSet が3台になり、古い Pod が消えるまで待ちます。</p><p>期待する出力。</p><pre data-lang="text"><code>Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 old replicas are pending termination...
+deployment &quot;memo&quot; successfully rolled out</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。途中の行数は違ってよいです。最後が <code>successfully rolled out</code> であれば成功です。</p><p>出力が違うとき。 <code>timed out</code> なら、新しい Pod が ImagePullBackOff のことがあります。<code>memo:ch14</code> を <code>kind load</code> したかを確認してください。</p><ol><li>新しい Pod を見ます。</li></ol><pre data-lang="bash"><code>kubectl get pods -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。手順12と同じコマンドです。差し替え後の名前を見ます。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME                    READY   STATUS        RESTARTS   AGE
+memo-5748c4d9fc-7d266   1/1     Running       0          1s
+memo-5748c4d9fc-ndkdl   1/1     Running       0          2s
+memo-5748c4d9fc-r26v4   1/1     Running       0          1s
+memo-8444ddd4f6-jvnnk   1/1     Terminating   0          2s
+memo-8444ddd4f6-ngn42   1/1     Terminating   0          3s
+memo-8444ddd4f6-x5lnq   1/1     Terminating   0          3s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。名前と AGE は違ってよいです。この実行では、<code>5748c4d9fc</code> の Pod が3つ Running で、前の <code>8444ddd4f6</code> は Terminating でした。Terminating は、終了処理中という意味です。すぐに消えます。</p><p>出力が違うとき。 古い名前だけが Running なら、差し替えが始まっていません。手順13の出力が <code>image updated</code> だったかを見てください。</p><ol><li>直前の定義へ戻します。</li></ol><pre data-lang="bash"><code>kubectl rollout undo deployment/memo -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl rollout undo</code> は、help では、前のロールアウトへ戻します。 <code>--to-revision</code> を付けない既定は 0 で、help では最後のリビジョンです。ここでは、イメージを <code>memo:ch14</code> にする直前へ戻します。 <code>-n memo</code> は、名前空間です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>Warning: resource deployments/memo was previously managed with &#x27;kubectl apply&#x27;. Rolling back will not update the kubectl.kubernetes.io/last-applied-configuration annotation, which may cause unexpected behavior on future &#x27;kubectl apply&#x27; operations. Consider using &#x27;kubectl apply&#x27; with your previous configuration file instead.
+deployment.apps/memo rolled back</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。1行目は警告です。<code>kubectl apply</code> で管理していた Deployment を undo すると、最後に apply した内容の記録は戻らない、という意味です。2行目の <code>deployment.apps/memo rolled back</code> が出て、終了ステータスが 0 なら、戻る操作自体は受け付けられています。</p><p>出力が違うとき。 警告が無くても、<code>rolled back</code> なら成功です。 <code>error:</code> で終わるなら、戻る先がありません。手順13のあとであるかを確認してください。</p><ol><li>戻り終わるまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl rollout status deployment/memo -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。戻した定義の Pod が3台になるまで待ちます。</p><p>期待する出力。</p><pre data-lang="text"><code>Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment &quot;memo&quot; rollout to finish: 1 old replicas are pending termination...
+deployment &quot;memo&quot; successfully rolled out</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。途中の行数は違ってよいです。最後が <code>successfully rolled out</code> であれば成功です。</p><p>出力が違うとき。 <code>timed out</code> なら、<code>kubectl get pods -n memo --context kind-memo</code> で STATUS を見てください。</p><ol><li>戻った Pod を見ます。</li></ol><pre data-lang="bash"><code>kubectl get pods -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。戻したあとの一覧です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME                    READY   STATUS        RESTARTS   AGE
+memo-5748c4d9fc-7d266   1/1     Terminating   0          2s
+memo-5748c4d9fc-ndkdl   1/1     Terminating   0          3s
+memo-5748c4d9fc-r26v4   1/1     Terminating   0          2s
+memo-8444ddd4f6-jvnnk   1/1     Terminating   0          3s
+memo-8444ddd4f6-lsw4b   1/1     Running       0          1s
+memo-8444ddd4f6-ngn42   1/1     Terminating   0          4s
+memo-8444ddd4f6-vfwvc   1/1     Running       0          0s
+memo-8444ddd4f6-x5lnq   1/1     Terminating   0          4s
+memo-8444ddd4f6-zj5xk   1/1     Running       0          1s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。名前と AGE は違ってよいです。この実行では、<code>8444ddd4f6</code> の Running が3つあり、<code>5748c4d9fc</code> は Terminating でした。イメージを差し替える前の ReplicaSet に戻っています。レプリカは 3 のままです。</p><p>出力が違うとき。 <code>5748c4d9fc</code> だけが Running なら、undo のあとです。手順16と17を確認してください。</p><h2 id="何が起きたか">何が起きたか</h2><p>Deployment は、Pod を直接には数えません。ReplicaSet に、望ましい数を渡します。イメージを変えると、新しい ReplicaSet ができ、古い ReplicaSet の Pod は段々と消えます。undo は、その直前の ReplicaSet を、再び望ましい側にします。</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 280" role="img" aria-label="DeploymentがReplicaSetを通してPodを3つにする">
+  <title>Deployment と ReplicaSet</title>
+  <rect width="720" height="280" fill="#0B1220"/>
+  <rect x="24" y="40" width="180" height="200" rx="8" fill="#111827" stroke="#60A5FA"/>
+  <text x="114" y="100" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">Deployment</text>
+  <text x="114" y="136" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">replicas 3</text>
+  <text x="114" y="168" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">image memo:ch13</text>
+  <path d="M210 140 H280" stroke="#60A5FA" stroke-width="3"/>
+  <path d="M270 132 L286 140 L270 148" fill="#60A5FA"/>
+  <rect x="290" y="40" width="160" height="200" rx="8" fill="#111827" stroke="#1F2937"/>
+  <text x="370" y="120" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">ReplicaSet</text>
+  <text x="370" y="156" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">数を保つ</text>
+  <path d="M456 140 H520" stroke="#60A5FA" stroke-width="3"/>
+  <path d="M510 132 L526 140 L510 148" fill="#60A5FA"/>
+  <rect x="530" y="36" width="166" height="56" rx="8" fill="#172554" stroke="#60A5FA"/>
+  <text x="613" y="70" fill="#F8FAFC" font-family="system-ui" font-size="14" text-anchor="middle">Pod</text>
+  <rect x="530" y="112" width="166" height="56" rx="8" fill="#172554" stroke="#60A5FA"/>
+  <text x="613" y="146" fill="#F8FAFC" font-family="system-ui" font-size="14" text-anchor="middle">Pod</text>
+  <rect x="530" y="188" width="166" height="56" rx="8" fill="#172554" stroke="#60A5FA"/>
+  <text x="613" y="222" fill="#F8FAFC" font-family="system-ui" font-size="14" text-anchor="middle">Pod</text>
+</svg><p>左が注文票です。中央の ReplicaSet が、右の Pod を3つに保ちます。1つ消えても、Deployment の定義が3のままなら、ReplicaSet が足りない分を作ります。その実験は第18章です。</p><h2 id="壊してみる">壊してみる</h2><p>レプリカに、0 より小さい数を渡します。</p><ol><li>不正な数で scale します。</li></ol><pre data-lang="bash"><code>kubectl scale deployment/memo --replicas=-1 -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>--replicas</code> は、help では新しい望ましい数です。 <code>-1</code> は、0 より小さいので受け付けません。このコマンドは、2026-10-16 に、すでに Deployment がある状態で実行しました。</p><p>期待する出力。</p><pre data-lang="text"><code>error: The --replicas=COUNT flag is required, and COUNT must be greater than or equal to 0</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 1 でした。 <code>scaled</code> とは出ていません。サーバが台数を変えた、という表示はありません。</p><p>出力が違うとき。 <code>deployment.apps/memo scaled</code> と出たら、<code>-1</code> が別の数になっています。コマンドをコピーし直してください。</p><p><code>error:</code> で始まる行は、クライアントが拒否した、という意味です。0 以上の整数だけが、レプリカの数になります。</p><h2 id="確認テスト">確認テスト</h2><p>文章で答えてください。新しいコマンドを実行しなくても答えられます。</p><section class="quiz"><h3 id="問題1">問題1</h3><p><code>spec.replicas</code> が 2 の Deployment は、何を望ましい状態として持ちますか。</p><details><summary>解答と解説</summary><p>同じ Pod の定義が、2つ同時に動いている状態です。</p><p>このクラスタの explain では、replicas は望ましい Pod の数です。指定が無いときの既定は 1 です。</p></details></section><section class="quiz"><h3 id="問題2">問題2</h3><p><code>kubectl set image</code> でイメージを変えたとき、古い Pod はどうなりますか。</p><details><summary>解答と解説</summary><p>新しい ReplicaSet の Pod が増え、古い Pod は Terminating になって消えます。</p><p>strategy の既定は RollingUpdate です。この章の実行では、新しい名前の Pod が Running になり、古い名前は Terminating でした。</p></details></section><section class="quiz"><h3 id="問題3">問題3</h3><p><code>kubectl rollout undo</code> で <code>--to-revision</code> を省略すると、どこへ戻りますか。</p><details><summary>解答と解説</summary><p>最後のリビジョンです。help の既定は 0 で、それが最後のリビジョンを指します。</p><p>この章では、<code>memo:ch14</code> へ差し替えた直後に undo したので、差し替える前の <code>memo:ch13</code> の ReplicaSet に戻りました。</p></details></section><h2 id="まとめ">まとめ</h2><ul><li><strong>Deployment</strong>: Pod と ReplicaSet の望ましい状態を宣言し、制御された速さでそこへ寄せるリソースです。</li><li><strong>レプリカ</strong>: 同じ Pod の定義を、同時に動かしたい数です。<code>spec.replicas</code> に書きます。</li><li><strong>ロールバック</strong>: Deployment を、前のリビジョンの定義へ戻す操作です。<code>kubectl rollout undo</code> がそれを行います。</li><li><strong>ReplicaSet</strong>: 指定した数の Pod を保つリソースです。Deployment がこれを作り、直接は管理しません。</li></ul><h2 id="片付け">片付け</h2><p>この章の Deployment は消しません。第15章で、この Pod へ届く入口を作ります。レプリカは 3 のままです。第16章のマニフェストを apply すると、2 に戻ります。イメージ <code>memo:ch13</code> と <code>memo:ch14</code> も残します。</p><label class="done"><input type="checkbox" data-done="14">この章を読み終えた</label><nav class="pager"><a class="prev" rel="prev" href="13.html"><small>前の章</small>第13章 Pod</a><span><small>次の章</small>これが最後の章です</span></nav>
+</main>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#確認したバージョン">確認したバージョン</a></li><li><a class="depth-2" href="#この章のゴール">この章のゴール</a></li><li><a class="depth-2" href="#前提">前提</a></li><li><a class="depth-2" href="#たとえ話">たとえ話</a></li><li><a class="depth-2" href="#手を動かす">手を動かす</a></li><li><a class="depth-2" href="#何が起きたか">何が起きたか</a></li><li><a class="depth-2" href="#壊してみる">壊してみる</a></li><li><a class="depth-2" href="#確認テスト">確認テスト</a></li><li><a class="depth-3" href="#問題1">問題1</a></li><li><a class="depth-3" href="#問題2">問題2</a></li><li><a class="depth-3" href="#問題3">問題3</a></li><li><a class="depth-2" href="#まとめ">まとめ</a></li><li><a class="depth-2" href="#片付け">片付け</a></li></ol></details>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>

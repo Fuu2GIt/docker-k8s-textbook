@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: memo
+  namespace: memo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: memo
+  template:
+    metadata:
+      labels:
+        app: memo
+    spec:
+      containers:
+      - name: web
+        image: memo:ch13
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
