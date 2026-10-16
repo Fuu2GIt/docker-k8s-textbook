@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: memo
+  namespace: memo
+data:
+  APP_MESSAGE: 設定から
