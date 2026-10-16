@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2章 環境を整える</title>
+<link rel="stylesheet" href="../assets/site.css">
+<script>try{document.documentElement.dataset.os=localStorage.getItem('docker-k8s-textbook-os')||'linux';}catch(e){document.documentElement.dataset.os='linux';}</script>
+</head>
+<body data-root="../">
+<a class="skip" href="#main">本文へ</a>
+<header class="site-header">
+<a class="brand" href="../index.html">DockerとKubernetesの教科書</a>
+<nav class="header-links" aria-label="関連ページ">
+<a href="../glossary.html">用語集</a>
+<a href="../commands.html">コマンド</a>
+</nav>
+<form class="search" role="search">
+<label class="visually-hidden" for="search">検索</label>
+<input id="search" type="search" placeholder="章のタイトルと本文を検索" autocomplete="off">
+<ul id="search-results" class="search-results"></ul>
+</form>
+<div class="os-switch" role="group" aria-label="手順のOS">
+<button type="button" data-os-choice="windows" aria-pressed="false">Windows</button>
+<button type="button" data-os-choice="linux" aria-pressed="false">Linux</button>
+</div>
+</header>
+<div class="layout">
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="../chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="../chapters/02.html" data-chapter="02" aria-current="page">第2章 環境を整える</a></li><li><span>コマンドラインの基礎</span></li></ol><p class="part-label">第2部 Docker</p><ol><li><span>はじめてのコンテナ</span></li><li><span>イメージとレイヤー</span></li><li><span>Dockerfileで自作イメージを作る</span></li><li><span>ポートとネットワーク</span></li><li><span>データを残す</span></li><li><span>Docker Compose</span></li><li><span>イメージを小さく安全にする</span></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><span>Kubernetesとは何か、なぜ必要か</span></li><li><span>ローカル環境を作る</span></li><li><span>Pod</span></li><li><span>Deploymentで複数台にする、更新する、ロールバックする</span></li><li><span>Serviceで公開する</span></li><li><span>ConfigMapとSecret</span></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<main id="main">
+<p class="part-kicker">第1部 準備と基礎</p><h1>第2章 環境を整える</h1><p class="meta">目安は約50分です。</p><h2 id="確認したバージョン">確認したバージョン</h2><p>2026-10-16 に、次のページを開いて手順を確認しました。</p><ul><li><a href="https://docs.docker.com/engine/install/ubuntu/">Install Docker Engine on Ubuntu</a></li><li><a href="https://docs.docker.com/engine/install/linux-postinstall/">Linux post-installation steps for Docker Engine</a></li><li><a href="https://docs.docker.com/desktop/setup/install/windows-install/">Install Docker Desktop on Windows</a></li><li><a href="https://learn.microsoft.com/en-us/windows/wsl/install">Install WSL</a></li><li><a href="https://manpages.debian.org/testing/apt/apt-get.8.en.html">apt-get(8)</a></li></ul><p>Linux 側は、Ubuntu 24.04.5 LTS で実行しました。入れたパッケージは、Docker Engine 29.9.1、containerd.io 2.4.2、Buildx 0.38.0、Compose プラグイン 5.6.0 です。<code>apt</code> は 2.8.3、<code>curl</code> は 8.5.0、<code>install</code> と <code>chmod</code> は GNU coreutils 9.4 です。</p><p><code>docker version</code> と <code>docker compose version</code> の表示は、次のとおりです。これは手順の途中ではなく、執筆環境の確認です。</p><pre data-lang="text"><code>Client: Docker Engine - Community
+ Version:           29.9.1
+ API version:       1.56
+ Go version:        go1.26.9
+ Git commit:        dfc520d
+ Built:             Wed Oct 14 18:32:55 2026
+ OS/Arch:           linux/amd64
+ Context:           default
+
+Server: Docker Engine - Community
+ Engine:
+  Version:          29.9.1
+  API version:      1.56 (minimum version 1.40)
+  Go version:       go1.26.9
+  Git commit:       b26fb77
+  Built:            Wed Oct 14 18:32:55 2026
+  OS/Arch:          linux/amd64
+  Experimental:     false
+ containerd:
+  Version:          v2.4.2
+  GitCommit:        b7a25261e029d68978bbf290df0a62fc819b3c51
+ runc:
+  Version:          1.5.2
+  GitCommit:        v1.5.2-0-g29dd3dc2
+ docker-init:
+  Version:          0.19.0
+  GitCommit:        de40ad0
+Docker Compose version v5.6.0</code></pre><p>Windows の手順は、上の公式ページのコマンドを写しています。この環境では実行していないので、期待する出力は未確認です。</p><p><code>-y</code> は、Docker の Ubuntu 手順の例には付いていません。確認の質問で止まらないように、この教科書では付けています。意味は apt-get(8) の <code>--assume-yes</code> で確認しました。<code>apt</code> の説明には、apt-get と同じ機能だと書いてあります。</p><h2 id="この章のゴール">この章のゴール</h2><ul><li>Ubuntu に <a href="../glossary.html#term-Docker Engine">Docker Engine</a> を入れて、hello-world を起動できる</li><li>Windows で、<a href="../glossary.html#term-WSL2">WSL2</a> と <a href="../glossary.html#term-Docker Desktop">Docker Desktop</a> を入れる順番を説明できる</li><li><a href="../glossary.html#term-dockerグループ">dockerグループ</a> に自分を加える理由を説明できる</li></ul><h2 id="前提">前提</h2><p>第1章の言葉が分かっていれば足ります。<a href="../glossary.html#term-イメージ">イメージ</a> から <a href="../glossary.html#term-コンテナ">コンテナ</a> を起動する、という関係だけ使います。</p><p>Linux は Ubuntu です。管理者のパスワードを知っている必要があります。先頭の <code>sudo</code> は、続くコマンドを管理者として実行する、という意味です。パスワードを聞かれたら入力します。入力中の文字は表示されません。</p><p>Windows は、Windows 10 の 22H2 以降、または Windows 11 の 23H2 以降を想定します。メモリは 8GB 以上が Docker の要件です。WSL の初回有効化だけ、管理者の PowerShell が要ります。Docker Desktop の利用者向けインストールは、管理者でなくてよい、と公式ページに書いてあります。</p><h2 id="たとえ話">たとえ話</h2><p>料理の前に、コンロを設置する場面を想像してください。</p><p>この章は、まだ料理をしません。コンロを置いて、火が付くことだけ確認します。火が付けば、次の章から容器を使います。</p><h2 id="手を動かす">手を動かす</h2><p>Linux では Docker Engine を入れます。Windows では WSL2 を用意してから、Docker Desktop を入れます。手順の番号は揃えています。中身は違います。</p><p>この Linux の出力は、2026-10-16 に、すでに Docker が入っている Ubuntu で同じコマンドをもう一度実行したものです。初めて入れるときは、取得と展開の行がこの出力より長くなります。最後まで進み、終了すれば成功です。</p><div class="os-tabs"><div class="os-tablist" role="tablist"><button type="button" data-os-choice="windows">Windows</button><button type="button" data-os-choice="linux">Linux</button></div><div class="os-panel" data-os="windows" role="tabpanel"><p>ここでの実行場所は、PowerShell です。コマンドプロンプトではありません。<code>wsl --install</code> と <code>wsl --update</code> は、スタートメニューで PowerShell を右クリックし、「管理者として実行」した窓で実行します。</p><ol><li>WSL の版を表示します。</li></ol><pre data-lang="powershell"><code>wsl --version</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl</code> は、Windows から WSL を操作するコマンドです。 <code>--version</code> は、入っている WSL の版を表示するオプションです。Docker の Windows 手順は、2.1.5 以降を要件にしています。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 版の数字が出ずにヘルプだけ出たら、Docker のページが言う古い WSL です。次の手順で入れ直します。コマンドが見つからない旨なら、PowerShell ではありません。</p><ol><li>WSL を入れます。</li></ol><pre data-lang="powershell"><code>wsl --install</code></pre><p>何をするコマンドか。 実行場所は、管理者の PowerShell です。 <code>wsl --install</code> は、WSL に必要な機能を有効にし、標準では Ubuntu を入れます。Microsoft Learn に、そう書いてあります。オプションは付けていません。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。再起動を求められたら、再起動してから続きを実行します。</p><p>出力が違うとき。 ヘルプの文章が出たら、WSL は既に入っています。失敗ではありません。Microsoft Learn の注記どおり、次のディストリビューション一覧へ進んでください。0.0% のまま止まったら、同じページにある <code>wsl --install --web-download -d Ubuntu</code> を試す、と書いてあります。そのコマンドはこの環境では未確認です。</p><ol><li>WSL を更新します。</li></ol><pre data-lang="powershell"><code>wsl --update</code></pre><p>何をするコマンドか。 実行場所は、管理者の PowerShell です。 <code>wsl --update</code> は、WSL を新しい版に更新します。Docker の Windows 手順が、版の確認の次に案内しているコマンドです。オプションは付けていません。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 既に最新である旨でも、成功です。再起動を求められたら、再起動してから次へ進みます。</p><ol><li>新しいディストリビューションの標準を、WSL2 にします。</li></ol><pre data-lang="powershell"><code>wsl.exe --set-default-version 2</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl.exe</code> は <code>wsl</code> と同じプログラムです。 <code>--set-default-version</code> は、これから入れる Linux の標準の世代を決めるオプションです。引数の <code>2</code> は WSL2 です。WSL2 は、Windows の中で Linux カーネルを動かす世代です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 既に 2 である旨でも、成功です。管理者権限が必要だという旨なら、管理者の PowerShell で開き直してください。</p><ol><li>入れられる Linux の一覧を表示します。</li></ol><pre data-lang="powershell"><code>wsl.exe --list --online</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>--list</code> は、一覧を出すオプションです。 <code>--online</code> は、今のパソコンに入っているものではなく、入手できる一覧を出すオプションです。Ubuntu の名前があることを見ます。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 空に近いときは、ネットワークに届いていないことが多いです。接続を確認して、同じコマンドをもう一度実行してください。</p><ol><li>Ubuntu を指定して入れます。</li></ol><pre data-lang="powershell"><code>wsl.exe --install -d Ubuntu</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>--install</code> はディストリビューションを入れるオプションです。 <code>-d</code> は、名前を指定するオプションです。 <code>Ubuntu</code> は、この教科書の Linux 側の基準です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。初めて起動した Ubuntu は、利用者名とパスワードを聞きます。入力したパスワードは、この Ubuntu の中で使います。</p><p>出力が違うとき。 既に入っている旨なら、手順2で Ubuntu が入っています。失敗ではありません。次へ進んでください。</p><ol><li>入っている Ubuntu を WSL2 にします。</li></ol><pre data-lang="powershell"><code>wsl.exe --set-version Ubuntu 2</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>--set-version</code> は、指定したディストリビューションの世代を変えるオプションです。 <code>Ubuntu</code> は名前です。 <code>2</code> は WSL2 です。Microsoft Learn の例は、<code>wsl --set-version Ubuntu 2</code> です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 既にバージョン 2 である旨なら、成功です。変換に時間がかかっても、完了の表示まで待ちます。</p><ol><li>入っている Linux と世代を表示します。</li></ol><pre data-lang="powershell"><code>wsl.exe --list --verbose</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>--list</code> は一覧です。 <code>--verbose</code> は、世代の番号まで出すオプションです。Ubuntu の行が 2 であることを確認します。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。</p><p>出力が違うとき。 VERSION が 1 なら、手順7をもう一度実行してください。Ubuntu の行が無いときは、手順6からやり直してください。</p><ol><li>Docker Desktop を、利用者向けに入れます。</li></ol><p>先に、公式の <a href="https://docs.docker.com/desktop/setup/install/windows-install/">Install Docker Desktop on Windows</a> から <code>Docker Desktop Installer.exe</code> をダウンロードします。PowerShell のカレントディレクトリを、そのファイルがあるフォルダにしてから、次を実行します。</p><pre data-lang="powershell"><code>Start-Process &#x27;Docker Desktop Installer.exe&#x27; -Wait -ArgumentList &#x27;install&#x27;, &#x27;--user&#x27;</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。管理者でなくてよい、と公式ページに書いてあります。 <code>Start-Process</code> は、プログラムを起動します。 <code>-Wait</code> は、そのプログラムが終わるまで待つオプションです。 <code>-ArgumentList</code> は、起動先へ渡す引数です。 <code>install</code> はインストーラの導入動作です。 <code>--user</code> は、利用者向けの導入で、置き場所は <code>%LOCALAPPDATA%\Programs\DockerDesktop</code> です。標準のバックエンドは WSL2 です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell を実行できませんでした。終わったら、スタートメニューから Docker Desktop を起動し、利用条件の画面を確認します。</p><p>出力が違うとき。 ファイルが見つからない旨なら、インストーラがあるフォルダではありません。<code>cd</code> でそのフォルダへ移ってから、同じコマンドを実行してください。</p></div><div class="os-panel" data-os="linux" role="tabpanel"><p>実行場所は、Ubuntu の端末です。</p><ol><li>Ubuntu の版を表示します。</li></ol><pre data-lang="bash"><code>cat /etc/os-release</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>cat</code> は、ファイルの中身を表示します。引数の <code>/etc/os-release</code> は、OS の名前と版が書いてあるファイルです。オプションは付けていません。</p><p>期待する出力。</p><pre data-lang="text"><code>PRETTY_NAME=&quot;Ubuntu 24.04.5 LTS&quot;
+NAME=&quot;Ubuntu&quot;
+VERSION_ID=&quot;24.04&quot;
+VERSION=&quot;24.04.5 LTS (Noble Numbat)&quot;
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL=&quot;https://www.ubuntu.com/&quot;
+SUPPORT_URL=&quot;https://help.ubuntu.com/&quot;
+BUG_REPORT_URL=&quot;https://bugs.launchpad.net/ubuntu/&quot;
+PRIVACY_POLICY_URL=&quot;https://www.ubuntu.com/legal/terms-and-policies/privacy-policy&quot;
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>VERSION_ID</code> が 24.04、22.04、26.04、26.10 のいずれかなら、Docker の Ubuntu 手順の対象です。それ以外は、この教科書では確認していません。ファイルが無い旨なら、Ubuntu ではありません。</p><ol><li>パッケージの一覧を更新します。</li></ol><pre data-lang="bash"><code>sudo apt update</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は、続くコマンドを管理者として実行します。 <code>apt</code> は、ソフトウェアの包みを管理するコマンドです。この包みをパッケージと呼びます。 <code>update</code> は、入手できるパッケージの一覧を新しくする動作です。オプションは付けていません。</p><p>期待する出力。</p><pre data-lang="text"><code>WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:2 https://dl.google.com/linux/chrome-stable/deb stable InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+38 packages can be upgraded. Run &#x27;apt list --upgradable&#x27; to see them.</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。先頭の WARNING は、結果をファイルへ残す実行で、画面が端末ではないと判断されたために出ました。自分の端末では出ないことがあります。<code>Hit</code> の URL と、更新できるパッケージの数は、パソコンごとに違います。</p><p>出力が違うとき。 <code>Reading package lists</code> まで進んでプロンプトに戻れば、成功です。パスワードを聞かれたら、Ubuntu の利用者パスワードを入力してください。<code>Could not resolve host</code> のように名前を引けない旨なら、ネットワークに届いていません。</p><ol><li>鍵の取得に使うパッケージを入れます。</li></ol><pre data-lang="bash"><code>sudo apt install -y ca-certificates curl</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>apt install</code> は、名前を指定したパッケージを入れます。 <code>-y</code> は、確認にすべて yes と答えて、質問で止まらないオプションです。apt-get(8) では <code>--assume-yes</code> と同じです。 <code>ca-certificates</code> は、通信相手を確かめる証明書の束です。 <code>curl</code> は、URL からファイルを取るコマンドです。</p><p>期待する出力。</p><pre data-lang="text"><code>WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+ca-certificates is already the newest version (20260601~24.04.1).
+curl is already the newest version (8.5.0-2ubuntu10.16).
+0 upgraded, 0 newly installed, 0 to remove and 38 not upgraded.</code></pre><p>この出力は、2026-10-16 に、既に入っている環境でもう一度実行した結果です。終了ステータスは 0 でした。初めてのときは、取得と展開の行が続きます。WARNING は手順2と同じ理由で、端末では出ないことがあります。版の数字は、実行した日によって違ってよいです。</p><p>出力が違うとき。 最後がプロンプトに戻り、エラーの単語が無ければ成功です。<code>Unable to locate package</code> と出たら、手順2の一覧更新が終わっていません。手順2からやり直してください。</p><ol><li>鍵を置くディレクトリを作ります。</li></ol><pre data-lang="bash"><code>sudo install -m 0755 -d /etc/apt/keyrings</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 この <code>install</code> は <code>apt install</code> ではありません。ファイルやディレクトリを作る GNU のコマンドです。 <code>sudo</code> は管理者として実行します。 <code>-m</code> は、権限の数字を指定するオプションです。 <code>0755</code> は、所有者は読み書きと実行、他の利用者は読みと実行、という意味の指定です。 <code>-d</code> は、引数をディレクトリとして作るオプションです。 <code>/etc/apt/keyrings</code> は、作る場所です。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。ディレクトリが既にあっても、エラーにはなりません。</p><p>出力が違うとき。 <code>Permission denied</code> と出たら、<code>sudo</code> が抜けています。コマンドをもう一度、先頭からコピーしてください。</p><ol><li>Docker の公開鍵を保存します。</li></ol><pre data-lang="bash"><code>sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>curl</code> は、URL の中身を取得します。 <code>-f</code> は、HTTP のエラーでは失敗させるオプションです。 <code>-s</code> は、進捗を出さないオプションです。 <code>-S</code> は、<code>-s</code> のときでもエラーは表示するオプションです。 <code>-L</code> は、転送先が変わったときに追いかけるオプションです。 <code>-o</code> は、標準出力ではなく指定したファイルへ書くオプションです。URL は Docker の Ubuntu 用の公開鍵です。保存先は手順4のディレクトリです。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>-s</code> を付けているので、成功時は静かです。</p><p>出力が違うとき。 <code>curl: command not found</code> と出たら、手順3が終わっていません。通信エラーなら、ネットワークを確認して、同じコマンドをもう一度実行してください。</p><ol><li>鍵ファイルを、誰でも読めるようにします。</li></ol><pre data-lang="bash"><code>sudo chmod a+r /etc/apt/keyrings/docker.asc</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>chmod</code> は、ファイルの権限を変えます。 <code>a+r</code> は、全員に読み取りを足す指定です。 <code>a</code> は全員、<code>+</code> は追加、<code>r</code> は読み取りです。GNU coreutils 9.4 の <code>chmod --help</code> にあるモードの形に合います。最後の引数は、手順5で保存したファイルです。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 ファイルが無い旨なら、手順5の保存先と綴りを比べてください。<code>/etc/apt/keyrings/docker.asc</code> をそのままコピーします。</p><ol><li>Docker の配布元を apt に登録します。</li></ol><pre data-lang="bash"><code>sudo tee /etc/apt/sources.list.d/docker.sources &lt;&lt;EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release &amp;&amp; echo &quot;${UBUNTU_CODENAME:-$VERSION_CODENAME}&quot;)
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>tee</code> は、入力をファイルと画面の両方へ書きます。ファイルは <code>/etc/apt/sources.list.d/docker.sources</code> です。 <code>&lt;&lt;EOF</code> から次の <code>EOF</code> の直前までが、その入力です。 <code>Suites</code> の行は、手順1の Ubuntu のコード名を埋めます。 <code>Architectures</code> の行は、このパソコンの CPU の種類を埋めます。中身は、Docker の Ubuntu 手順と同じ設定です。</p><p>期待する出力。</p><pre data-lang="text"><code>Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: noble
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。<code>noble</code> は Ubuntu 24.04 のコード名です。<code>amd64</code> は、このパソコンの種類です。22.04 ならコード名は <code>jammy</code> になります。</p><p>出力が違うとき。 <code>Suites</code> が空なら、<code>/etc/os-release</code> を手順1でもう一度見てください。権限のエラーなら、<code>sudo</code> を含めてコピーし直してください。</p><ol><li>登録した配布元を、一覧へ反映します。</li></ol><pre data-lang="bash"><code>sudo apt update</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 コマンド自体は手順2と同じです。 <code>sudo</code> は管理者として実行します。 <code>apt update</code> は、パッケージの一覧を更新します。手順7の配布元が、この時点で一覧に入ります。</p><p>期待する出力。</p><pre data-lang="text"><code>WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 https://download.docker.com/linux/ubuntu noble InRelease
+Hit:2 https://dl.google.com/linux/chrome-stable/deb stable InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:4 http://security.ubuntu.com/ubuntu noble-security InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:6 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+38 packages can be upgraded. Run &#x27;apt list --upgradable&#x27; to see them.</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。初めて登録した直後は、Docker の行が <code>Get</code> になることがあります。<code>download.docker.com</code> の行がエラーでなければ成功です。WARNING は手順2と同じ理由です。</p><p>出力が違うとき。 <code>NO_PUBKEY</code> や署名のエラーなら、手順5から7をやり直してください。Docker の行が無いときは、手順7のファイルができていません。</p><ol><li>Docker のパッケージを入れます。</li></ol><pre data-lang="bash"><code>sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>apt install</code> はパッケージを入れます。 <code>-y</code> は、確認に yes と答えるオプションです。 <code>docker-ce</code> は Docker Engine の本体です。 <code>docker-ce-cli</code> は、<code>docker</code> というコマンドです。 <code>containerd.io</code> は、コンテナの実行を担う部品です。 <code>docker-buildx-plugin</code> は、イメージを作るときに使う部品です。 <code>docker-compose-plugin</code> は、複数のコンテナをまとめて起動する部品です。名前は、Docker の Ubuntu 手順と同じです。</p><p>期待する出力。</p><pre data-lang="text"><code>WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+docker-ce is already the newest version (5:29.9.1-1~ubuntu.24.04~noble).
+docker-ce-cli is already the newest version (5:29.9.1-1~ubuntu.24.04~noble).
+containerd.io is already the newest version (2.4.2-2~ubuntu.24.04~noble).
+docker-buildx-plugin is already the newest version (0.38.0-1~ubuntu.24.04~noble).
+docker-compose-plugin is already the newest version (5.6.0-1~ubuntu.24.04~noble).
+0 upgraded, 0 newly installed, 0 to remove and 38 not upgraded.</code></pre><p>この出力は、2026-10-16 に、既に入っている環境でもう一度実行した結果です。終了ステータスは 0 でした。初めてのときは、ダウンロードと <code>Setting up docker-ce</code> のような行が続きます。版の数字が上と違っても、5つの名前が入り、プロンプトに戻れば成功です。WARNING は手順2と同じ理由です。</p><p>出力が違うとき。 <code>Unable to locate package docker-ce</code> と出たら、手順8が成功していません。手順7からやり直してください。<code>invoke-rc.d</code> や <code>systemd</code> の失敗が出ても、パッケージの設定自体は終わっていることがあります。次の確認へ進んでください。</p></div></div><p>導入のあと、動くことを確認します。Linux では、管理者以外でも <code>docker</code> を実行できるようにします。Windows では、WSL2 の Ubuntu から <code>docker</code> が応答するかを見ます。</p><div class="os-tabs"><div class="os-tablist" role="tablist"><button type="button" data-os-choice="windows">Windows</button><button type="button" data-os-choice="linux">Linux</button></div><div class="os-panel" data-os="windows" role="tabpanel"><ol><li>Ubuntu の中から、Docker の版を見ます。</li></ol><pre data-lang="powershell"><code>wsl docker version</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl</code> の後ろにコマンドを書くと、標準の Linux の中でそのコマンドを実行します。Microsoft Learn の例は <code>wsl pwd</code> です。ここでは <code>docker version</code> を実行します。オプションは付けていません。先に Docker Desktop を起動しておきます。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell と WSL2 を実行できませんでした。Client と Server の両方に版が出れば成功です。</p><p>出力が違うとき。 <code>wsl</code> が見つからない旨なら、手順1へ戻ってください。Docker のクライアントだけ出てサーバへ繋がらない旨なら、Docker Desktop が止まっています。スタートメニューから起動して、もう一度実行してください。</p><ol><li>Compose の版を見ます。</li></ol><pre data-lang="powershell"><code>wsl docker compose version</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl</code> は Ubuntu の中で実行します。 <code>docker compose</code> は、複数のコンテナをまとめるコマンドです。 <code>version</code> は、その版を表示します。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell と WSL2 を実行できませんでした。</p><p>出力が違うとき。 <code>compose</code> が不明だという旨なら、Docker Desktop の導入が完了していません。Desktop を起動し直して、もう一度実行してください。</p><ol><li>Ubuntu 側の今いる場所を表示します。</li></ol><pre data-lang="powershell"><code>wsl pwd</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl pwd</code> は、Ubuntu の中の現在のディレクトリを表示します。Microsoft Learn が、PowerShell から Linux 側を見る例として挙げている形です。この教科書では、以後のファイルをこの Linux 側に置きます。エクスプローラーの <code>C:\Users</code> 配下は、Ubuntu からは <code>/mnt/c</code> 以下になり、速度と改行の差が出ます。実験は第8章でします。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell と WSL2 を実行できませんでした。<code>/home/</code> で始まる1行なら、Linux 側です。</p><p>出力が違うとき。 <code>/mnt/c</code> で始まるときは、Windows 側のフォルダを見ています。Ubuntu の端末をスタートメニューから開き、<code>cd</code> とだけ実行してホームへ戻してください。</p><ol><li>動作確認用のコンテナを起動します。</li></ol><pre data-lang="powershell"><code>wsl docker run --rm hello-world</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl</code> は Ubuntu の中で実行します。 <code>docker run</code> は、イメージからコンテナを作って起動します。 <code>--rm</code> は、終了したコンテナを自動で消すオプションです。 <code>hello-world</code> は、確認用のイメージの名前です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell と WSL2 を実行できませんでした。Linux 側で同じ <code>docker run --rm hello-world</code> を実行した出力は、下の Linux タブにあります。</p><p>出力が違うとき。 権限を拒否された旨なら、Docker Desktop が Ubuntu と連携していません。Desktop の設定で WSL integration が有効か、公式の WSL の説明を確認してください。この項目は、この環境では未確認です。</p></div><div class="os-panel" data-os="linux" role="tabpanel"><ol><li>Docker のサービスが動いているかを見ます。</li></ol><pre data-lang="bash"><code>sudo systemctl is-active docker</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>systemctl</code> は、systemd が管理するサービスの状態を見ます。 <code>is-active</code> は、指定したユニットが active かを聞く動作です。引数の <code>docker</code> は、Docker Engine のサービス名です。公式の Ubuntu 手順は、確認に <code>sudo systemctl status docker</code> を案内しています。状態だけを1語で見るために、この教科書では <code>is-active</code> を使います。</p><p>期待する出力。</p><p class="unverified">未確認。systemd で Docker を動かしている Ubuntu では、<code>active</code> と1行出ます。この執筆環境は PID 1 が systemd ではないため、その成功表示を取れていません。実行した結果は、次のエラーです。</p><pre data-lang="text"><code>System has not been booted with systemd as init system (PID 1). Can&#x27;t operate.
+Failed to connect to bus: Host is down</code></pre><p>終了ステータスは 1 でした。この環境では、確認のために <code>dockerd</code> を直接起動しています。読者の Ubuntu では、パッケージ導入のあと systemd が Docker を起動します。</p><p>出力が違うとき。 <code>active</code> と出たら、成功です。 <code>inactive</code> と出たら、入っていますが止まっています。公式の手順にある <code>sudo systemctl start docker</code> を実行してから、もう一度 <code>is-active</code> を見てください。上の PID 1 の文が出た場合は、この執筆環境と同じ制限です。そのときは、このあとの hello-world が動くかで判断してください。</p><ol><li>docker グループを作ります。</li></ol><pre data-lang="bash"><code>sudo groupadd docker</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>groupadd</code> は、利用者のグループを作ります。引数の <code>docker</code> は、グループの名前です。公式の導入後手順にあるコマンドです。Docker のパッケージが、このグループを先に作っていることがあります。そのときは、自分で作る必要はない、とも書いてあります。</p><p>期待する出力。</p><pre data-lang="text"><code>groupadd: group &#x27;docker&#x27; already exists</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 9 でした。グループが既にある、という意味です。Docker をパッケージで入れたあとは、この表示になってよいです。次へ進みます。何も表示されず終了ステータスが 0 なら、今このコマンドがグループを作った、という意味で、それも成功です。</p><p>出力が違うとき。 権限が無い旨なら、<code>sudo</code> を含めてコピーし直してください。別の綴りエラーなら、グループ名は <code>docker</code> のままにしてください。</p><ol><li>自分を docker グループへ追加します。</li></ol><pre data-lang="bash"><code>sudo usermod -aG docker &quot;$USER&quot;</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>sudo</code> は管理者として実行します。 <code>usermod</code> は、利用者の設定を変えます。 <code>-a</code> は、既存のグループを外さずに追加するオプションです。 <code>-G</code> は、追加先のグループ名を指定するオプションです。 <code>-a</code> は <code>-G</code> と一緒に使います。この環境の <code>usermod --help</code> に、そう書いてあります。 <code>docker</code> はグループ名です。 <code>&quot;$USER&quot;</code> は、今の利用者名に置き換わります。引用符は、名前を1語として渡すためです。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。追加の結果は、今開いている端末にはまだ出ません。グループの一覧は、端末を開き直したあとに更新されます。確認するときは、いったん端末を閉じて、新しい端末で <code>id -nG</code> を実行します。<code>docker</code> が含まれていれば追加されています。</p><blockquote><p>docker グループに入ると、管理者に近い操作ができます。Docker の導入後手順にも、root と同等の権限になる、と書いてあります。自分の学習用パソコンでは、公式の手順どおりに追加します。複数人で使うサーバでは、追加する前に管理者へ確認してください。</p></blockquote><p>出力が違うとき。 利用者名が無い旨なら、<code>&quot;$USER&quot;</code> を手で自分の名前に書き換えてください。グループが無い旨なら、手順2を先に実行してください。</p><ol><li>動作確認用のコンテナを起動します。</li></ol><pre data-lang="bash"><code>docker run --rm hello-world</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>docker run</code> は、イメージからコンテナを作って起動します。 <code>--rm</code> は、終了したコンテナと、それに紐づく無名のボリュームを消すオプションです。この環境の <code>docker run --help</code> に、そう書いてあります。 <code>hello-world</code> は、確認用のイメージの名前です。この執筆環境では、今の端末のグループ一覧に <code>docker</code> が無くても実行できました。確認用に、ソケットの権限を広げてあるためです。手元の Ubuntu では、手順3のあと、端末を開き直してから実行してください。</p><p>期待する出力。</p><pre data-lang="text"><code>Unable to find image &#x27;hello-world:latest&#x27; locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pulling fs layer
+4f55086f7dd0: Download complete
+4f55086f7dd0: Pull complete
+d5e71e642bf5: Download complete
+Digest: sha256:11a3eb1597e864c51b3f56733cb2e8a90bf0c284bfc05f9444d81c558bc848aa
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the &quot;hello-world&quot; image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/</code></pre><p>この出力は、2026-10-16 に、イメージが無い状態から実行した結果です。終了ステータスは 0 でした。2回目以降は、<code>Unable to find image</code> から <code>Downloaded newer image</code> までの行は出ません。<code>Hello from Docker!</code> が出れば成功です。</p><p>出力が違うとき。 <code>permission denied</code> とソケットのパスが出たら、グループの変更が今の端末に入っていません。端末を開き直して、このコマンドだけもう一度実行してください。<code>Cannot connect to the Docker daemon</code> と出たら、Docker が止まっています。手順1が <code>active</code> になることを先に確認してください。</p></div></div><h2 id="何が起きたか">何が起きたか</h2><p>Linux では、apt が Docker の配布元を覚え、5つのパッケージを入れました。<code>docker</code> コマンドは、常駐している Docker Engine へ頼みごとを送ります。hello-world では、Engine がイメージを取得し、コンテナを1つ作り、メッセージを返して、<code>--rm</code> でそのコンテナを消しました。</p><p>Windows では、WSL2 の Ubuntu が Linux の実行場所になり、Docker Desktop がその中から使える Engine を用意します。ファイルは Ubuntu のホームに置きます。</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" role="img" aria-labelledby="fig2Title fig2Desc">
+  <title id="fig2Title">Windows と Linux で Docker を置く場所</title>
+  <desc id="fig2Desc">左は Windows です。Windows の上に WSL2 があり、その中の Ubuntu から Docker Desktop の Engine へ頼みごとを送ります。右は Linux です。Ubuntu の上で Docker Engine が動き、docker コマンドがそこへ頼みごとを送ります。</desc>
+  <rect width="760" height="420" fill="#0B1220"/>
+  <text x="190" y="36" fill="#F8FAFC" font-family="system-ui" font-size="22" text-anchor="middle">Windows</text>
+  <text x="560" y="36" fill="#F8FAFC" font-family="system-ui" font-size="22" text-anchor="middle">Linux</text>
+  <rect x="40" y="60" width="300" height="64" rx="6" fill="#111827" stroke="#1F2937"/>
+  <text x="190" y="98" fill="#E5E7EB" font-family="system-ui" font-size="18" text-anchor="middle">Windows</text>
+  <rect x="40" y="140" width="300" height="64" rx="6" fill="#111827" stroke="#1F2937"/>
+  <text x="190" y="178" fill="#E5E7EB" font-family="system-ui" font-size="18" text-anchor="middle">WSL2 の Ubuntu</text>
+  <rect x="40" y="220" width="300" height="64" rx="6" fill="#172554" stroke="#60A5FA"/>
+  <text x="190" y="258" fill="#F8FAFC" font-family="system-ui" font-size="18" text-anchor="middle">Docker Desktop の Engine</text>
+  <rect x="40" y="300" width="300" height="64" rx="6" fill="#172554" stroke="#60A5FA"/>
+  <text x="190" y="338" fill="#F8FAFC" font-family="system-ui" font-size="18" text-anchor="middle">hello-world コンテナ</text>
+  <rect x="410" y="60" width="300" height="64" rx="6" fill="#111827" stroke="#1F2937"/>
+  <text x="560" y="98" fill="#E5E7EB" font-family="system-ui" font-size="18" text-anchor="middle">Ubuntu</text>
+  <rect x="410" y="180" width="300" height="64" rx="6" fill="#172554" stroke="#60A5FA"/>
+  <text x="560" y="218" fill="#F8FAFC" font-family="system-ui" font-size="18" text-anchor="middle">Docker Engine</text>
+  <rect x="410" y="300" width="300" height="64" rx="6" fill="#172554" stroke="#60A5FA"/>
+  <text x="560" y="338" fill="#F8FAFC" font-family="system-ui" font-size="18" text-anchor="middle">hello-world コンテナ</text>
+</svg><p>左は Windows です。Ubuntu は WSL2 の中にあります。右は Linux です。Ubuntu がそのまま土台です。どちらも、起動した hello-world は Engine の上のコンテナです。</p><h2 id="壊してみる">壊してみる</h2><p>存在しないイメージ名で起動し、拒否の文を読みます。</p><div class="os-tabs"><div class="os-tablist" role="tablist"><button type="button" data-os-choice="windows">Windows</button><button type="button" data-os-choice="linux">Linux</button></div><div class="os-panel" data-os="windows" role="tabpanel"><ol><li>存在しないイメージ名で起動します。</li></ol><pre data-lang="powershell"><code>wsl docker run --rm textbook-no-such-image:none</code></pre><p>何をするコマンドか。 実行場所は、PowerShell です。 <code>wsl</code> は Ubuntu の中で実行します。 <code>docker run</code> はコンテナを起動します。 <code>--rm</code> は、終了時にコンテナを消すオプションです。 <code>textbook-no-such-image:none</code> は、わざと存在しないイメージ名です。</p><p>期待する出力。</p><p class="unverified">未確認。この執筆環境は Linux で、PowerShell と WSL2 を実行できませんでした。Linux で同じイメージ名を実行したエラーは、下の Linux タブにあります。</p><p>出力が違うとき。 <code>Hello from Docker!</code> と出たら、イメージ名をコピーし損ねています。<code>textbook-no-such-image:none</code> をそのまま使ってください。</p></div><div class="os-panel" data-os="linux" role="tabpanel"><ol><li>存在しないイメージ名で起動します。</li></ol><pre data-lang="bash"><code>docker run --rm textbook-no-such-image:none</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>docker run</code> はコンテナを起動します。 <code>--rm</code> は、終了時にコンテナを消すオプションです。 <code>textbook-no-such-image:none</code> は、わざと存在しないイメージ名です。コロンの左が名前、右がその名前の中の指定です。詳しい分け方は第5章で見ます。</p><p>期待する出力。</p><pre data-lang="text"><code>Unable to find image &#x27;textbook-no-such-image:none&#x27; locally
+docker: Error response from daemon: pull access denied for textbook-no-such-image, repository does not exist or may require &#x27;docker login&#x27;
+
+Run &#x27;docker run --help&#x27; for more information</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 125 でした。</p><p>出力が違うとき。 <code>Hello from Docker!</code> と出たら、hello-world のコマンドを実行しています。イメージ名を見比べてください。</p></div></div><p>1行目は、そのイメージが手元に無い、という報告です。2行目の <code>docker:</code> は、失敗したコマンドです。<code>repository does not exist</code> は、配布元にその名前が無い、という意味です。最後の行は、<code>docker run --help</code> でオプション一覧を見られる、という案内です。</p><h2 id="確認テスト">確認テスト</h2><p>文章で答えてください。コマンドを新しく実行しなくても答えられます。</p><section class="quiz"><h3 id="問題1">問題1</h3><p>Linux で入れる本体と、Windows で入れるアプリは、それぞれ何ですか。</p><details><summary>解答と解説</summary><p>Linux では Docker Engine です。Windows では Docker Desktop です。</p><p>Docker Engine は、Linux 上でコンテナを動かす本体です。Docker Desktop は、Windows では WSL2 を土台にして、その Engine を使えるようにするアプリです。</p></details></section><section class="quiz"><h3 id="問題2">問題2</h3><p><code>groupadd: group &#x27;docker&#x27; already exists</code> と出たとき、次へ進んでよいですか。</p><details><summary>解答と解説</summary><p>進んでよいです。グループは既にあります。</p><p>Docker のパッケージがグループを先に作っていると、この表示になります。終了ステータスは 0 ではありません。それでも、グループが無い失敗とは違います。</p></details></section><section class="quiz"><h3 id="問題3">問題3</h3><p>WSL2 を使う Windows で、この教科書のファイルはどこに置きますか。</p><details><summary>解答と解説</summary><p>WSL2 の Ubuntu のホームに置きます。</p><p>Windows 側の <code>C:\Users</code> は、Ubuntu からは <code>/mnt/c</code> 以下です。速度と改行の差を避けるため、作業は Linux 側でします。</p></details></section><h2 id="まとめ">まとめ</h2><ul><li><strong>Docker Engine</strong>: Linux 上でコンテナを動かす本体です。<code>docker</code> コマンドは、ここへ頼みごとを送ります。</li><li><strong>Docker Desktop</strong>: Windows で Docker を使うためのアプリです。標準では WSL2 の上で Engine を動かします。</li><li><strong>WSL2</strong>: Windows の中で Linux を動かす仕組みです。この教科書の Windows 側の実行場所は、その中の Ubuntu です。</li><li><strong>dockerグループ</strong>: <code>docker</code> コマンドを、sudo なしで実行できるようにする利用者の集まりです。</li></ul><h2 id="片付け">片付け</h2><p>hello-world は <code>--rm</code> で起動したので、コンテナは終了と同時に消えています。存在しないイメージ名の実験も、コンテナを残していません。</p><p>Docker 本体と、hello-world のイメージは残します。次の章から使います。消すコマンドはありません。</p><label class="done"><input type="checkbox" data-done="02">この章を読み終えた</label><nav class="pager"><a class="prev" rel="prev" href="01.html"><small>前の章</small>第1章 コンテナとは何か</a><span><small>次の章</small>これが最後の章です</span></nav>
+</main>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#確認したバージョン">確認したバージョン</a></li><li><a class="depth-2" href="#この章のゴール">この章のゴール</a></li><li><a class="depth-2" href="#前提">前提</a></li><li><a class="depth-2" href="#たとえ話">たとえ話</a></li><li><a class="depth-2" href="#手を動かす">手を動かす</a></li><li><a class="depth-2" href="#何が起きたか">何が起きたか</a></li><li><a class="depth-2" href="#壊してみる">壊してみる</a></li><li><a class="depth-2" href="#確認テスト">確認テスト</a></li><li><a class="depth-3" href="#問題1">問題1</a></li><li><a class="depth-3" href="#問題2">問題2</a></li><li><a class="depth-3" href="#問題3">問題3</a></li><li><a class="depth-2" href="#まとめ">まとめ</a></li><li><a class="depth-2" href="#片付け">片付け</a></li></ol></details>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>
