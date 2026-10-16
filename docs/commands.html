@@ -26,7 +26,7 @@
 </div>
 </header>
 <div class="layout">
-<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="chapters/13.html" data-chapter="13">第13章 Pod</a></li><li><a href="chapters/14.html" data-chapter="14">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><a href="chapters/15.html" data-chapter="15">第15章 Serviceで公開する</a></li><li><a href="chapters/16.html" data-chapter="16">第16章 ConfigMapとSecret</a></li><li><span>永続ボリューム</span></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="chapters/13.html" data-chapter="13">第13章 Pod</a></li><li><a href="chapters/14.html" data-chapter="14">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><a href="chapters/15.html" data-chapter="15">第15章 Serviceで公開する</a></li><li><a href="chapters/16.html" data-chapter="16">第16章 ConfigMapとSecret</a></li><li><a href="chapters/17.html" data-chapter="17">第17章 永続ボリューム</a></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
 <main id="main">
 <h1>コマンド早見表</h1><p>各章の本文に出るコマンドです。ファイルの中身は載せていません。</p><h2 id="commands-01">第1章 <a href="chapters/01.html">コンテナとは何か</a></h2><pre data-lang="text"><code>Get-ComputerInfo -Property WindowsProductName</code></pre><pre data-lang="text"><code>Get-ComputerInfo -Property OsVersion</code></pre><pre data-lang="text"><code>uname -s</code></pre><pre data-lang="text"><code>uname -r</code></pre><pre data-lang="text"><code>Get-ComputerInfo -NotARealOption</code></pre><pre data-lang="text"><code>uname --not-a-real-option</code></pre><h2 id="commands-02">第2章 <a href="chapters/02.html">環境を整える</a></h2><pre data-lang="text"><code>wsl --version</code></pre><pre data-lang="text"><code>wsl --install</code></pre><pre data-lang="text"><code>wsl --update</code></pre><pre data-lang="text"><code>wsl.exe --set-default-version 2</code></pre><pre data-lang="text"><code>wsl.exe --list --online</code></pre><pre data-lang="text"><code>wsl.exe --install -d Ubuntu</code></pre><pre data-lang="text"><code>wsl.exe --set-version Ubuntu 2</code></pre><pre data-lang="text"><code>wsl.exe --list --verbose</code></pre><pre data-lang="text"><code>Start-Process &#x27;Docker Desktop Installer.exe&#x27; -Wait -ArgumentList &#x27;install&#x27;, &#x27;--user&#x27;</code></pre><pre data-lang="text"><code>cat /etc/os-release</code></pre><pre data-lang="text"><code>sudo apt update</code></pre><pre data-lang="text"><code>sudo apt install -y ca-certificates curl</code></pre><pre data-lang="text"><code>sudo install -m 0755 -d /etc/apt/keyrings</code></pre><pre data-lang="text"><code>sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc</code></pre><pre data-lang="text"><code>sudo chmod a+r /etc/apt/keyrings/docker.asc</code></pre><pre data-lang="text"><code>sudo tee /etc/apt/sources.list.d/docker.sources &lt;&lt;EOF
 Types: deb
@@ -409,9 +409,80 @@ spec:
               name: memo
               key: APP_TOKEN
 EOF</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch16/configmap.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch16/secret.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch16/deployment.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl rollout status deployment/memo -n memo --timeout=90s --context kind-memo</code></pre><pre data-lang="text"><code>curl -sS -D - http://127.0.0.1:30080/</code></pre><pre data-lang="text"><code>kubectl get configmap memo -n memo --context kind-memo -o jsonpath=&#x27;{.data.APP_MESSAGE}{&quot;
-&quot;}&#x27;</code></pre><pre data-lang="text"><code>kubectl exec deployment/memo -n memo --context kind-memo -- printenv APP_TOKEN</code></pre><pre data-lang="text"><code>kubectl get secret memo -n memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl exec deployment/memo -n memo --context kind-memo -- printenv APP_MISSING</code></pre>
+&quot;}&#x27;</code></pre><pre data-lang="text"><code>kubectl exec deployment/memo -n memo --context kind-memo -- printenv APP_TOKEN</code></pre><pre data-lang="text"><code>kubectl get secret memo -n memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl exec deployment/memo -n memo --context kind-memo -- printenv APP_MISSING</code></pre><h2 id="commands-17">第17章 <a href="chapters/17.html">永続ボリューム</a></h2><pre data-lang="text"><code>mkdir -p &quot;$HOME/docker-learn/ch17&quot; &amp;&amp; cd &quot;$HOME/docker-learn/ch17&quot;</code></pre><pre data-lang="text"><code>kubectl get storageclass standard --context kind-memo</code></pre><pre data-lang="text"><code>cat &gt; pvc.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memo-data
+  namespace: memo
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Mi
+EOF</code></pre><pre data-lang="text"><code>cat &gt; write.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-write
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: write
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - open(&quot;/data/memo.txt&quot;,&quot;w&quot;).write(&quot;残るメモ\n&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data
+EOF</code></pre><pre data-lang="text"><code>cat &gt; read.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-read
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: read
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - print(open(&quot;/data/memo.txt&quot;).read(), end=&quot;&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data
+EOF</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/pvc.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get pvc memo-data -n memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/write.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl wait --for=jsonpath=&#x27;{.status.phase}&#x27;=Succeeded pod/memo-write -n memo --timeout=90s --context kind-memo</code></pre><pre data-lang="text"><code>kubectl get pvc memo-data -n memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/write.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/read.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl wait --for=jsonpath=&#x27;{.status.phase}&#x27;=Succeeded pod/memo-read -n memo --timeout=90s --context kind-memo</code></pre><pre data-lang="text"><code>kubectl logs memo-read -n memo --context kind-memo</code></pre><pre data-lang="text"><code>kubectl apply -f - --context kind-memo &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memo-bad
+  namespace: memo
+spec:
+  accessModes:
+  - NotAMode
+  resources:
+    requests:
+      storage: 10Mi
+EOF</code></pre><pre data-lang="text"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/read.yaml&quot; --context kind-memo</code></pre><pre data-lang="text"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/pvc.yaml&quot; --context kind-memo</code></pre>
 </main>
-<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#commands-01">第1章 コンテナとは何か</a></li><li><a class="depth-2" href="#commands-02">第2章 環境を整える</a></li><li><a class="depth-2" href="#commands-03">第3章 コマンドラインの基礎</a></li><li><a class="depth-2" href="#commands-04">第4章 はじめてのコンテナ</a></li><li><a class="depth-2" href="#commands-05">第5章 イメージとレイヤー</a></li><li><a class="depth-2" href="#commands-06">第6章 Dockerfileで自作イメージを作る</a></li><li><a class="depth-2" href="#commands-07">第7章 ポートとネットワーク</a></li><li><a class="depth-2" href="#commands-08">第8章 データを残す</a></li><li><a class="depth-2" href="#commands-09">第9章 Docker Compose</a></li><li><a class="depth-2" href="#commands-10">第10章 イメージを小さく安全にする</a></li><li><a class="depth-2" href="#commands-11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a class="depth-2" href="#commands-12">第12章 ローカル環境を作る</a></li><li><a class="depth-2" href="#commands-13">第13章 Pod</a></li><li><a class="depth-2" href="#commands-14">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><a class="depth-2" href="#commands-15">第15章 Serviceで公開する</a></li><li><a class="depth-2" href="#commands-16">第16章 ConfigMapとSecret</a></li></ol></details>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#commands-01">第1章 コンテナとは何か</a></li><li><a class="depth-2" href="#commands-02">第2章 環境を整える</a></li><li><a class="depth-2" href="#commands-03">第3章 コマンドラインの基礎</a></li><li><a class="depth-2" href="#commands-04">第4章 はじめてのコンテナ</a></li><li><a class="depth-2" href="#commands-05">第5章 イメージとレイヤー</a></li><li><a class="depth-2" href="#commands-06">第6章 Dockerfileで自作イメージを作る</a></li><li><a class="depth-2" href="#commands-07">第7章 ポートとネットワーク</a></li><li><a class="depth-2" href="#commands-08">第8章 データを残す</a></li><li><a class="depth-2" href="#commands-09">第9章 Docker Compose</a></li><li><a class="depth-2" href="#commands-10">第10章 イメージを小さく安全にする</a></li><li><a class="depth-2" href="#commands-11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a class="depth-2" href="#commands-12">第12章 ローカル環境を作る</a></li><li><a class="depth-2" href="#commands-13">第13章 Pod</a></li><li><a class="depth-2" href="#commands-14">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><a class="depth-2" href="#commands-15">第15章 Serviceで公開する</a></li><li><a class="depth-2" href="#commands-16">第16章 ConfigMapとSecret</a></li><li><a class="depth-2" href="#commands-17">第17章 永続ボリューム</a></li></ol></details>
 </div>
 <script src="assets/search-index.js"></script>
 <script src="assets/site.js"></script>

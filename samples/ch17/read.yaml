@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-read
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: read
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - print(open("/data/memo.txt").read(), end="")
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data

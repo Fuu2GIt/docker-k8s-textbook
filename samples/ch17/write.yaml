@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-write
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: write
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - open("/data/memo.txt","w").write("残るメモ\n")
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data

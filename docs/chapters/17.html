@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第17章 永続ボリューム</title>
+<link rel="stylesheet" href="../assets/site.css">
+<script>try{document.documentElement.dataset.os=localStorage.getItem('docker-k8s-textbook-os')||'linux';}catch(e){document.documentElement.dataset.os='linux';}</script>
+</head>
+<body data-root="../">
+<a class="skip" href="#main">本文へ</a>
+<header class="site-header">
+<a class="brand" href="../index.html">DockerとKubernetesの教科書</a>
+<nav class="header-links" aria-label="関連ページ">
+<a href="../glossary.html">用語集</a>
+<a href="../commands.html">コマンド</a>
+</nav>
+<form class="search" role="search">
+<label class="visually-hidden" for="search">検索</label>
+<input id="search" type="search" placeholder="章のタイトルと本文を検索" autocomplete="off">
+<ul id="search-results" class="search-results"></ul>
+</form>
+<div class="os-switch" role="group" aria-label="手順のOS">
+<button type="button" data-os-choice="windows" aria-pressed="false">Windows</button>
+<button type="button" data-os-choice="linux" aria-pressed="false">Linux</button>
+</div>
+</header>
+<div class="layout">
+<div class="book-nav"><input class="nav-toggle" id="nav-toggle" type="checkbox"><label for="nav-toggle">章の一覧</label><p class="part-label">第1部 準備と基礎</p><ol><li><a href="../chapters/01.html" data-chapter="01">第1章 コンテナとは何か</a></li><li><a href="../chapters/02.html" data-chapter="02">第2章 環境を整える</a></li><li><a href="../chapters/03.html" data-chapter="03">第3章 コマンドラインの基礎</a></li></ol><p class="part-label">第2部 Docker</p><ol><li><a href="../chapters/04.html" data-chapter="04">第4章 はじめてのコンテナ</a></li><li><a href="../chapters/05.html" data-chapter="05">第5章 イメージとレイヤー</a></li><li><a href="../chapters/06.html" data-chapter="06">第6章 Dockerfileで自作イメージを作る</a></li><li><a href="../chapters/07.html" data-chapter="07">第7章 ポートとネットワーク</a></li><li><a href="../chapters/08.html" data-chapter="08">第8章 データを残す</a></li><li><a href="../chapters/09.html" data-chapter="09">第9章 Docker Compose</a></li><li><a href="../chapters/10.html" data-chapter="10">第10章 イメージを小さく安全にする</a></li></ol><p class="part-label">第3部 Kubernetes</p><ol><li><a href="../chapters/11.html" data-chapter="11">第11章 Kubernetesとは何か、なぜ必要か</a></li><li><a href="../chapters/12.html" data-chapter="12">第12章 ローカル環境を作る</a></li><li><a href="../chapters/13.html" data-chapter="13">第13章 Pod</a></li><li><a href="../chapters/14.html" data-chapter="14">第14章 Deploymentで複数台にする、更新する、ロールバックする</a></li><li><a href="../chapters/15.html" data-chapter="15">第15章 Serviceで公開する</a></li><li><a href="../chapters/16.html" data-chapter="16">第16章 ConfigMapとSecret</a></li><li><a href="../chapters/17.html" data-chapter="17" aria-current="page">第17章 永続ボリューム</a></li><li><span>障害を体験する</span></li><li><span>ヘルスチェックとリソース制限</span></li></ol><p class="part-label">第4部 次のステップ</p><ol><li><span>AWSへのつながり</span></li><li><span>学習の進め方と、総合演習</span></li></ol></div>
+<main id="main">
+<p class="part-kicker">第3部 Kubernetes</p><h1>第17章 永続ボリューム</h1><p class="meta">目安は約40分です。</p><h2 id="確認したバージョン">確認したバージョン</h2><p>2026-10-16 に、次を確認しました。</p><ul><li><a href="https://kubernetes.io/docs/concepts/storage/persistent-volumes/">Persistent Volumes</a></li><li><a href="https://kubernetes.io/docs/concepts/storage/storage-classes/#volume-binding-mode">Storage Classes</a></li><li>このクラスタの <code>kubectl explain persistentvolumeclaim.spec.accessModes</code></li><li>このクラスタの <code>kubectl explain persistentvolumeclaim.spec.storageClassName</code></li><li>このクラスタの <code>kubectl explain pod.spec.restartPolicy</code></li><li>このクラスタの <code>kubectl explain pod.spec.containers.command</code></li><li><code>kubectl wait --help</code></li></ul><p>クラスタは Kubernetes v1.37.0 です。クライアントは kubectl v1.37.1 です。公式の Persistent Volume の説明では、ReadWriteOnce は、ボリュームを1つのノードから読み書きでマウントできる、と書かれています。同じノード上の複数の Pod が、そのボリュームへアクセスできる場合もあります。</p><h2 id="この章のゴール">この章のゴール</h2><ul><li><a href="../glossary.html#term-永続ボリューム要求">永続ボリューム要求</a> を作り、Pod が使うまで Pending だと確認できる</li><li>書き込んだ文字を、その Pod を消したあとに別の Pod から読める</li><li><a href="../glossary.html#term-アクセスモード">アクセスモード</a> の値が不正だと、作成が拒否されると確認できる</li></ul><h2 id="前提">前提</h2><p>第13章のイメージ <code>memo:ch13</code> が、kind のノードに載っています。名前空間 <code>memo</code> と、第16章の Deployment は残します。この章で作るのは、書き込み用と読み取り用の Pod と、ディスクの要求だけです。</p><p>第8章の <a href="../glossary.html#term-ボリューム">ボリューム</a> は、Docker がコンテナのために持つ保存場所です。この章の永続ボリューム要求は、Kubernetes の Pod がディスクを求める宣言です。同じ言葉でも、指すものは違います。</p><p><a href="../glossary.html#term-ストレージクラス">ストレージクラス</a> は、ディスクの用意の仕方に付けた名前です。<a href="../glossary.html#term-再起動ポリシー">再起動ポリシー</a> は、Pod の中のコンテナが終わったあと、もう一度起動するかの指定です。このクラスタの explain では、Always、OnFailure、Never のいずれかで、既定は Always です。</p><p>実行場所は、Ubuntu の端末です。Windows では、<a href="../glossary.html#term-WSL2">WSL2</a> の Ubuntu です。この章のコマンドは、どちらも同じです。</p><h2 id="たとえ話">たとえ話</h2><p>貸ロッカーを想像してください。</p><p>「10センチのロッカーを、1つの場所から使いたい」と書く紙が、永続ボリューム要求です。荷物を入れた人が帰っても、ロッカーの中身は残ります。</p><h2 id="手を動かす">手を動かす</h2><ol><li>作業ディレクトリを作り、そこへ移動します。</li></ol><pre data-lang="bash"><code>mkdir -p &quot;$HOME/docker-learn/ch17&quot; &amp;&amp; cd &quot;$HOME/docker-learn/ch17&quot;</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。Windows では、WSL2 の Ubuntu です。 <code>mkdir -p</code> は、ディレクトリを作ります。 <code>&amp;&amp;</code> は、左が成功したときだけ右を実行します。 <code>cd</code> は、カレントディレクトリを移します。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>Permission denied</code> なら、ホーム以外です。コマンドをコピーし直してください。</p><ol><li>ストレージクラスを見ます。</li></ol><pre data-lang="bash"><code>kubectl get storageclass standard --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl get storageclass</code> は、ストレージクラスの一覧です。 <code>standard</code> は、その名前です。 <code>--context kind-memo</code> は、接続先です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME       PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+standard   rancher.io/local-path   Delete          WaitForFirstConsumer   false                  35m</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。AGE は違ってよいです。PROVISIONER は <code>rancher.io/local-path</code>、RECLAIMPOLICY は <code>Delete</code>、VOLUMEBINDINGMODE は <code>WaitForFirstConsumer</code> でした。公式の Storage Class の説明では、WaitForFirstConsumer は、その要求を使う Pod ができるまで、ボリュームの結合と用意を遅らせます。</p><p>出力が違うとき。 <code>NotFound</code> なら、クラスタが第12章の kind ではありません。<code>kubectl get storageclass --context kind-memo</code> で名前を見てください。</p><ol><li>永続ボリューム要求を作ります。</li></ol><pre data-lang="bash"><code>cat &gt; pvc.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memo-data
+  namespace: memo
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Mi
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。同じファイルを <code>samples/ch17/pvc.yaml</code> に置いてあります。 <code>kind: PersistentVolumeClaim</code> は、永続ボリューム要求だと API に伝えます。名前は <code>memo-data</code> です。名前空間は <code>memo</code> です。 <code>accessModes</code> は、explain では、ボリュームに持たせたいアクセスの仕方です。 <code>ReadWriteOnce</code> は、上で確認した、1つのノードから読み書きでマウントできるモードです。 <code>storageClassName: standard</code> は、explain では、要求するストレージクラスの名前です。 <code>storage: 10Mi</code> は、要求する容量です。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch17/pvc.yaml</code> とバイト単位で一致しました。</p><p>出力が違うとき。 YAML が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="yaml"><code>apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memo-data
+  namespace: memo
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 10Mi</code></pre><ol><li>書き込み用の Pod を作ります。</li></ol><pre data-lang="bash"><code>cat &gt; write.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-write
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: write
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - open(&quot;/data/memo.txt&quot;,&quot;w&quot;).write(&quot;残るメモ\n&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。同じファイルを <code>samples/ch17/write.yaml</code> に置いてあります。 <code>restartPolicy: Never</code> は、コンテナが終わっても再起動しない、という指定です。既定の Always のままだと、終わったコマンドを繰り返します。 <code>command</code> は、explain では、コンテナの入口の配列です。シェルでは実行しません。書かないときは、イメージの入口が使われます。ここでは <code>python -c</code> で、<code>/data/memo.txt</code> に <code>残るメモ</code> と改行を書きます。 <code>volumeMounts</code> の <code>mountPath: /data</code> は、ボリュームを見せるコンテナの中のパスです。 <code>persistentVolumeClaim.claimName: memo-data</code> は、手順3の要求を使います。イメージは <code>memo:ch13</code> です。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch17/write.yaml</code> とバイト単位で一致しました。</p><p>出力が違うとき。 YAML が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="yaml"><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-write
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: write
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - open(&quot;/data/memo.txt&quot;,&quot;w&quot;).write(&quot;残るメモ\n&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data</code></pre><ol><li>読み取り用の Pod を作ります。</li></ol><pre data-lang="bash"><code>cat &gt; read.yaml &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-read
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: read
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - print(open(&quot;/data/memo.txt&quot;).read(), end=&quot;&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。同じファイルを <code>samples/ch17/read.yaml</code> に置いてあります。書き込み用と同じボリュームを、<code>/data</code> に見せます。コマンドは、<code>/data/memo.txt</code> の中身を、最後の改行を足さずに出します。ファイル自身が改行を含んでいます。</p><p>期待する出力。</p><p>何も表示されません。2026-10-16 にこの執筆環境で実行し、終了ステータスは 0 でした。<code>samples/ch17/read.yaml</code> とバイト単位で一致しました。</p><p>出力が違うとき。 YAML が画面に出たら、<code>&gt;</code> が抜けています。コマンドをコピーし直してください。</p><pre data-lang="yaml"><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: memo-read
+  namespace: memo
+spec:
+  restartPolicy: Never
+  containers:
+  - name: read
+    image: memo:ch13
+    imagePullPolicy: IfNotPresent
+    command:
+    - python
+    - -c
+    - print(open(&quot;/data/memo.txt&quot;).read(), end=&quot;&quot;)
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: memo-data</code></pre><ol><li>要求だけを先に反映します。</li></ol><pre data-lang="bash"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/pvc.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl apply</code> は、ファイルの定義をクラスタへ反映します。 <code>-f</code> は、ファイル名です。この執筆環境では、同じ内容の <code>samples/ch17/pvc.yaml</code> を apply しました。</p><p>期待する出力。</p><pre data-lang="text"><code>persistentvolumeclaim/memo-data created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>configured</code> と出たら、すでに同じ名前があります。次の一覧を見てください。</p><ol><li>要求の状態を見ます。</li></ol><pre data-lang="bash"><code>kubectl get pvc memo-data -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl get pvc</code> は、永続ボリューム要求の一覧です。 <code>pvc</code> は PersistentVolumeClaim の短い名前です。 <code>-n memo</code> は、名前空間です。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME        STATUS    VOLUME   CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+memo-data   Pending                                      standard       &lt;unset&gt;                 0s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。AGE は違ってよいです。STATUS は <code>Pending</code> で、VOLUME は空でした。WaitForFirstConsumer のため、使う Pod がまだ無いと、ディスクは用意されません。</p><p>出力が違うとき。 すでに <code>Bound</code> なら、先に Pod が使っています。次へ進んでください。</p><ol><li>書き込み用の Pod を反映します。</li></ol><pre data-lang="bash"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/write.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。要求を使う Pod を作ります。この執筆環境では、同じ内容の <code>samples/ch17/write.yaml</code> を apply しました。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo-write created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>AlreadyExists</code> なら、同じ名前の Pod が残っています。片付けの削除を実行してから、もう一度作ってください。</p><ol><li>書き込みが終わるまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl wait --for=jsonpath=&#x27;{.status.phase}&#x27;=Succeeded pod/memo-write -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl wait</code> は、条件を満たすまで待ちます。 <code>--for=jsonpath=&#x27;{.status.phase}&#x27;=Succeeded</code> は、help の例と同じ形で、Pod の phase が Succeeded になるまで待ちます。Succeeded は、正常に終わった、という意味の phase です。 <code>pod/memo-write</code> は、種類と名前です。 <code>--timeout=90s</code> は、help では、あきらめるまでの時間です。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo-write condition met</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>timed out</code> なら、<code>kubectl get pod memo-write -n memo --context kind-memo</code> で STATUS を見てください。 <code>Pending</code> のままなら、ノードが NotReady です。</p><ol><li>要求が Bound になったかを見ます。</li></ol><pre data-lang="bash"><code>kubectl get pvc memo-data -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。手順7と同じ一覧です。Pod が使ったあとを見ます。</p><p>期待する出力。</p><pre data-lang="text"><code>NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+memo-data   Bound    pvc-866bc99a-6fcc-4af1-9e68-d95b9bfcb469   10Mi       RWO            standard       &lt;unset&gt;                 6s</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。VOLUME の名前と AGE は違ってよいです。この実行では、STATUS が <code>Bound</code>、CAPACITY が <code>10Mi</code>、ACCESS MODES が <code>RWO</code>、STORAGECLASS が <code>standard</code> でした。 <code>RWO</code> は、ReadWriteOnce の短い表示です。</p><p>出力が違うとき。 <code>Pending</code> のままなら、書き込み用の Pod がまだスケジュールされていません。手順9が成功しているかを確認してください。</p><ol><li>書き込み用の Pod を消します。</li></ol><pre data-lang="bash"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/write.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl delete</code> は、ファイルに書いた Pod を消します。 <code>--wait</code> の既定は true で、help では、リソースが無くなるまで待ってから戻ります。要求そのものは、このファイルの対象ではないので残します。この執筆環境では、同じ内容の <code>samples/ch17/write.yaml</code> を指定しました。</p><p>期待する出力。</p><pre data-lang="text"><code>pod &quot;memo-write&quot; deleted from memo namespace</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>NotFound</code> なら、すでに消えています。次へ進んでください。</p><ol><li>読み取り用の Pod を反映します。</li></ol><pre data-lang="bash"><code>kubectl apply -f &quot;$HOME/docker-learn/ch17/read.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。消した Pod とは別の Pod で、同じ要求を使います。この執筆環境では、同じ内容の <code>samples/ch17/read.yaml</code> を apply しました。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo-read created</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>AlreadyExists</code> なら、読み取り用の Pod が残っています。消してから作り直してください。</p><ol><li>読み取りが終わるまで待ちます。</li></ol><pre data-lang="bash"><code>kubectl wait --for=jsonpath=&#x27;{.status.phase}&#x27;=Succeeded pod/memo-read -n memo --timeout=90s --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。手順9と同じ待ち方です。対象が <code>pod/memo-read</code> です。</p><p>期待する出力。</p><pre data-lang="text"><code>pod/memo-read condition met</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>timed out</code> なら、Pod の STATUS を見てください。ファイルが無いと、コマンドは失敗し、phase は Succeeded になりません。</p><ol><li>読んだ文字を見ます。</li></ol><pre data-lang="bash"><code>kubectl logs memo-read -n memo --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl logs</code> は、コンテナが出した文字を表示します。読み取り用の Pod は、ファイルの中身を出して終わります。</p><p>期待する出力。</p><pre data-lang="text"><code>残るメモ</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。 <code>残るメモ</code> のあとに、ファイルへ書いた改行があります。書き込み用の Pod を消したあとも、文字が残っていました。</p><p>出力が違うとき。 空なら、ボリュームが別の場所についています。<code>mountPath</code> が <code>/data</code> かを確認してください。</p><h2 id="何が起きたか">何が起きたか</h2><p>要求を作っただけでは、STATUS は Pending のままでした。書き込み用の Pod が要求を使ったあと、Bound になり、容量は 10Mi でした。Pod を消しても要求は残り、次の Pod が同じファイルを読めました。</p><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" role="img" aria-label="Podが消えても永続ボリューム要求の先にファイルが残る">
+  <title>残るディスク</title>
+  <rect width="720" height="260" fill="#0B1220"/>
+  <rect x="24" y="40" width="200" height="180" rx="8" fill="#111827" stroke="#1F2937"/>
+  <text x="124" y="90" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">書き込み Pod</text>
+  <text x="124" y="122" fill="#94A3B8" font-family="system-ui" font-size="14" text-anchor="middle">消したあと</text>
+  <text x="124" y="160" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">読み取り Pod</text>
+  <text x="124" y="192" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">残るメモ を出す</text>
+  <path d="M230 130 H330" stroke="#60A5FA" stroke-width="3"/>
+  <path d="M320 122 L336 130 L320 138" fill="#60A5FA"/>
+  <rect x="340" y="50" width="350" height="160" rx="8" fill="#111827" stroke="#60A5FA"/>
+  <text x="515" y="110" fill="#F8FAFC" font-family="system-ui" font-size="16" text-anchor="middle">要求 memo-data</text>
+  <text x="515" y="146" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">Bound  10Mi  RWO</text>
+  <text x="515" y="178" fill="#E5E7EB" font-family="system-ui" font-size="14" text-anchor="middle">/data/memo.txt</text>
+</svg><p>左の Pod は入れ替わります。右の要求の先に、ファイルが残ります。Deployment のアプリとは別の Pod です。</p><h2 id="壊してみる">壊してみる</h2><p>アクセスモードに、一覧に無い値を書きます。</p><ol><li>不正な値で要求を作ります。</li></ol><pre data-lang="bash"><code>kubectl apply -f - --context kind-memo &lt;&lt;&#x27;EOF&#x27;
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: memo-bad
+  namespace: memo
+spec:
+  accessModes:
+  - NotAMode
+  resources:
+    requests:
+      storage: 10Mi
+EOF</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。 <code>kubectl apply -f -</code> は、ファイル名の代わりに、標準入力の YAML を読みます。 <code>NotAMode</code> は、アクセスモードとして定義されていない値です。名前は <code>memo-bad</code> です。</p><p>期待する出力。</p><pre data-lang="text"><code>The PersistentVolumeClaim &quot;memo-bad&quot; is invalid: spec.accessModes: Unsupported value: &quot;NotAMode&quot;: supported values: &quot;ReadOnlyMany&quot;, &quot;ReadWriteMany&quot;, &quot;ReadWriteOnce&quot;, &quot;ReadWriteOncePod&quot;</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 1 でした。そのあと <code>kubectl get pvc -n memo</code> は、<code>No resources found in memo namespace.</code> でした。 <code>memo-bad</code> は作られていません。</p><p>出力が違うとき。 <code>persistentvolumeclaim/memo-bad created</code> と出たら、値が受け付けられています。<code>kubectl delete pvc memo-bad -n memo --context kind-memo</code> で消してください。</p><p><code>Unsupported value</code> は、その欄が受け付ける値の一覧に入っていない、という意味です。このクラスタが示す値は、ReadOnlyMany、ReadWriteMany、ReadWriteOnce、ReadWriteOncePod です。</p><h2 id="確認テスト">確認テスト</h2><p>文章で答えてください。新しいコマンドを実行しなくても答えられます。</p><section class="quiz"><h3 id="問題1">問題1</h3><p>要求を作った直後の STATUS が Pending だったのは、なぜですか。</p><details><summary>解答と解説</summary><p>ストレージクラスの結合モードが WaitForFirstConsumer で、使う Pod がまだ無かったからです。</p><p>公式の説明では、このモードは、要求を使う Pod ができるまで、ボリュームの結合と用意を遅らせます。Pod のあと、STATUS は Bound になりました。</p></details></section><section class="quiz"><h3 id="問題2">問題2</h3><p>書き込み用の Pod を消したあとに、文字が残っていたことを、どの出力で確認しましたか。</p><details><summary>解答と解説</summary><p>読み取り用の Pod のログが <code>残るメモ</code> だったことです。</p><p>2つの Pod は別の名前です。同じ要求 <code>memo-data</code> を、<code>/data</code> に見せました。</p></details></section><section class="quiz"><h3 id="問題3">問題3</h3><p><code>restartPolicy: Never</code> を書いたのは、なぜですか。</p><details><summary>解答と解説</summary><p>終わったコマンドを、既定の Always で繰り返さないためです。</p><p>explain では、再起動ポリシーの既定は Always です。Never にすると、正常に終わった Pod の phase は Succeeded で止まれます。</p></details></section><h2 id="まとめ">まとめ</h2><ul><li><strong>永続ボリューム要求</strong>: Pod が欲しい容量とアクセスの仕方を書いたリソースです。Pod を消しても、要求は残ります。</li><li><strong>ストレージクラス</strong>: ディスクの用意の仕方に付けた名前です。このクラスタの <code>standard</code> は、最初の Pod まで結合を待ちます。</li><li><strong>アクセスモード</strong>: ボリュームをどうマウントするかの指定です。ReadWriteOnce は、1つのノードから読み書きできるモードです。</li><li><strong>再起動ポリシー</strong>: コンテナが終わったあと、もう一度起動するかの指定です。既定は Always で、この章の2つの Pod は Never です。</li></ul><h2 id="片付け">片付け</h2><p>読み取り用の Pod と、要求を消します。Deployment と Service と ConfigMap と Secret は残します。</p><ol><li>読み取り用の Pod を消します。</li></ol><pre data-lang="bash"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/read.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。読み取り用の Pod を消します。この執筆環境では、同じ内容の <code>samples/ch17/read.yaml</code> を指定しました。</p><p>期待する出力。</p><pre data-lang="text"><code>pod &quot;memo-read&quot; deleted from memo namespace</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>NotFound</code> なら、すでに消えています。次の削除へ進んでください。</p><ol><li>要求を消します。</li></ol><pre data-lang="bash"><code>kubectl delete -f &quot;$HOME/docker-learn/ch17/pvc.yaml&quot; --context kind-memo</code></pre><p>何をするコマンドか。 実行場所は、Ubuntu の端末です。永続ボリューム要求を消します。このストレージクラスの RECLAIMPOLICY は Delete でした。この章で確認したのは、次の削除の表示までです。この執筆環境では、同じ内容の <code>samples/ch17/pvc.yaml</code> を指定しました。</p><p>期待する出力。</p><pre data-lang="text"><code>persistentvolumeclaim &quot;memo-data&quot; deleted from memo namespace</code></pre><p>この出力は、2026-10-16 にこの執筆環境で実行した結果です。終了ステータスは 0 でした。</p><p>出力が違うとき。 <code>NotFound</code> なら、すでに消えています。次の章へ進んでください。</p><label class="done"><input type="checkbox" data-done="17">この章を読み終えた</label><nav class="pager"><a class="prev" rel="prev" href="16.html"><small>前の章</small>第16章 ConfigMapとSecret</a><span><small>次の章</small>これが最後の章です</span></nav>
+</main>
+<details class="ontoc" open><summary>この章の見出し</summary><ol><li><a class="depth-2" href="#確認したバージョン">確認したバージョン</a></li><li><a class="depth-2" href="#この章のゴール">この章のゴール</a></li><li><a class="depth-2" href="#前提">前提</a></li><li><a class="depth-2" href="#たとえ話">たとえ話</a></li><li><a class="depth-2" href="#手を動かす">手を動かす</a></li><li><a class="depth-2" href="#何が起きたか">何が起きたか</a></li><li><a class="depth-2" href="#壊してみる">壊してみる</a></li><li><a class="depth-2" href="#確認テスト">確認テスト</a></li><li><a class="depth-3" href="#問題1">問題1</a></li><li><a class="depth-3" href="#問題2">問題2</a></li><li><a class="depth-3" href="#問題3">問題3</a></li><li><a class="depth-2" href="#まとめ">まとめ</a></li><li><a class="depth-2" href="#片付け">片付け</a></li></ol></details>
+</div>
+<script src="../assets/search-index.js"></script>
+<script src="../assets/site.js"></script>
+</body>
+</html>
