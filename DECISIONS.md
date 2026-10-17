@@ -31,3 +31,4 @@
 - テイントの公式ページは、404 だった旧URLをやめて `https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/` を載せる。
 - 第21章の片付けは、画面の文字が「演習から」になったあとに、kind のクラスタ `memo` を削除する。
 - 公開リポジトリは `Fuu2GIt/docker-k8s-textbook` として作る。push がメール非公開で拒否されたので、コミット履歴は書き換えない。
+- メール公開の制限を外したあとに `main` を送り、Pages は `main` の `/docs` から公開する。公開ページは https://fuu2git.github.io/docker-k8s-textbook/ である。
