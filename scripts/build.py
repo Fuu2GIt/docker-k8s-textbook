@@ -13,16 +13,18 @@ SITE = ROOT / "site"
 
 COMMAND_LANGS = {"bash", "sh", "shell", "powershell", "pwsh", "cmd"}
 REQUIRED_H2 = [
-    "確認したバージョン",
     "この章のゴール",
     "前提",
-    "たとえ話",
     "手を動かす",
     "何が起きたか",
     "壊してみる",
     "確認テスト",
     "まとめ",
     "片付け",
+]
+FORBIDDEN_HEADINGS = [
+    "確認したバージョン",
+    "たとえ話",
 ]
 COMMAND_PHRASES = ["何をするコマンドか", "期待する出力", "出力が違うとき"]
 
@@ -447,7 +449,11 @@ def block_prose(block):
 
 
 def require_chapter_shape(blocks, path, concepts):
-    h2 = [text for level, text in ((b["level"], b["text"]) for b in blocks if b["type"] == "heading") if level == 2]
+    headings = [(b["level"], b["text"]) for b in blocks if b["type"] == "heading"]
+    forbidden = [text for _, text in headings if text in FORBIDDEN_HEADINGS]
+    if forbidden:
+        raise BuildError(f"{path}: 使わない見出しです: {forbidden}")
+    h2 = [text for level, text in headings if level == 2]
     if h2 != REQUIRED_H2:
         raise BuildError(f"{path}: 見出しの並びが違います\n期待: {REQUIRED_H2}\n実際: {h2}")
     names = [part.strip() for part in concepts.split(",") if part.strip()]
