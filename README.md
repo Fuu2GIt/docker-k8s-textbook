@@ -33,7 +33,7 @@ python3 scripts/check_site.py
 
 リポジトリの Settings、Pages で、Branch を `main`、Folder を `/docs` にします。公開先は `https://<ユーザー名>.github.io/docker-k8s-textbook/` です。
 
-第1章から第21章まで生成済みです。この作業環境では GitHub にログインできていないので、公開URLはまだありません。手順の続きは `STATUS.md` にあります。
+第1章から第21章まで生成済みです。公開リポジトリは https://github.com/Fuu2GIt/docker-k8s-textbook です。中身の push は、コミットのメールアドレスが非公開のため止まっています。手順の続きは `STATUS.md` にあります。
 
 ## サンプル
 

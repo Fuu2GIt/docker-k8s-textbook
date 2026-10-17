@@ -30,3 +30,4 @@
 - 第19章の壊す実験は、終了コード 1 のコマンドにする。アプリはどのパスでも 200 を返すので、存在しないパスへの HTTP 確認では落ちない。
 - テイントの公式ページは、404 だった旧URLをやめて `https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/` を載せる。
 - 第21章の片付けは、画面の文字が「演習から」になったあとに、kind のクラスタ `memo` を削除する。
+- 公開リポジトリは `Fuu2GIt/docker-k8s-textbook` として作る。push がメール非公開で拒否されたので、コミット履歴は書き換えない。
