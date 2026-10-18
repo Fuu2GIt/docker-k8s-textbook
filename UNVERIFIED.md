@@ -9,19 +9,19 @@
 - 場所: Windows
 
 ```text
-Get-ComputerInfo -Property WindowsProductName
+wsl uname -s
 ```
 
 - 場所: Windows
 
 ```text
-Get-ComputerInfo -Property OsVersion
+wsl uname -r
 ```
 
 - 場所: Windows
 
 ```text
-Get-ComputerInfo -NotARealOption
+wsl uname --not-a-real-option
 ```
 
 ## 第2章 環境を整える

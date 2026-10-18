@@ -28,6 +28,22 @@ FORBIDDEN_HEADINGS = [
 ]
 FORBIDDEN_TEXT = ["楓真", "最初の読者"]
 COMMAND_PHRASES = ["何をするコマンドか", "期待する出力", "出力が違うとき"]
+# 出力例（```text）に書いてよいURLのホスト。著者のパソコンだけが持つ配布元は入れない。
+ALLOWED_OUTPUT_HOSTS = frozenset({
+    "127.0.0.1",
+    "archive.ubuntu.com",
+    "bugs.launchpad.net",
+    "docs.docker.com",
+    "download.docker.com",
+    "help.ubuntu.com",
+    "hub.docker.com",
+    "localhost",
+    "pip.pypa.io",
+    "security.ubuntu.com",
+    "ubuntu.com",
+    "www.ubuntu.com",
+})
+OUTPUT_URL_RE = re.compile(r"https?://[^\s\"'`<>)]+", re.IGNORECASE)
 
 
 class BuildError(Exception):
@@ -618,6 +634,68 @@ def pager(chapter, chapters, written):
     return f'<nav class="pager">{prev_link}{next_link}</nav>'
 
 
+def iter_blocks(blocks, path):
+    for block in blocks:
+        yield block
+        kind = block["type"]
+        if kind == "tabs":
+            yield from iter_blocks(block["windows"], path)
+            yield from iter_blocks(block["linux"], path)
+        elif kind == "quiz":
+            yield from iter_blocks(block["question"], path)
+            yield from iter_blocks(block["answer"], path)
+            yield from iter_blocks(block["explain"], path)
+        elif kind == "warn":
+            yield from iter_blocks(parse_blocks(block["body"], path), path)
+
+
+def output_host(url):
+    authority = url.split("://", 1)[1].split("/", 1)[0].rstrip(").,;\"'")
+    if authority.startswith("["):
+        end = authority.find("]")
+        if end > 1:
+            return authority[1:end].lower()
+    return authority.split(":")[0].lower()
+
+
+def check_output_hosts(blocks, path):
+    for block in iter_blocks(blocks, path):
+        if block["type"] != "code" or block["lang"] != "text" or block["file"]:
+            continue
+        for match in OUTPUT_URL_RE.finditer(block["body"]):
+            host = output_host(match.group(0))
+            if host not in ALLOWED_OUTPUT_HOSTS:
+                raise BuildError(f"{path}: 出力例に許可していないホストがあります: {match.group(0)}")
+
+
+def publish_site(files):
+    """検査が通ったあとで docs/ を置き換える。途中で失敗しても、今の docs/ は残す。"""
+    staging = ROOT / ".docs-build"
+    previous = ROOT / ".docs-previous"
+    if staging.exists():
+        shutil.rmtree(staging)
+    if previous.exists():
+        shutil.rmtree(previous)
+    try:
+        for rel, content in files.items():
+            target = staging / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+        if DOCS.exists():
+            DOCS.rename(previous)
+        try:
+            staging.rename(DOCS)
+        except Exception:
+            if previous.exists() and not DOCS.exists():
+                previous.rename(DOCS)
+            raise
+        if previous.exists():
+            shutil.rmtree(previous)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+
+
 def main():
     part_titles, chapters = load_outline()
     if len(chapters) != 21:
@@ -635,6 +713,7 @@ def main():
         if meta.get("id") != chapter["id"] or meta.get("title") != chapter["title"] or meta.get("part") != chapter["part"]:
             raise BuildError(f"{path}: outline.json と front matter が一致しません")
         blocks = parse_blocks(body, path)
+        check_output_hosts(blocks, path)
         concepts = require_chapter_shape(blocks, path, meta.get("concepts", ""))
         terms = summary_terms(blocks, path)
         for term, _ in terms:
@@ -662,14 +741,6 @@ def main():
         for command in renderer.commands:
             all_commands.append((chapter, command))
 
-    if DOCS.exists():
-        shutil.rmtree(DOCS)
-    (DOCS / "assets").mkdir(parents=True)
-    (DOCS / "chapters").mkdir()
-    shutil.copy(SITE / "site.css", DOCS / "assets" / "site.css")
-    shutil.copy(SITE / "site.js", DOCS / "assets" / "site.js")
-    (DOCS / ".nojekyll").write_text("", encoding="utf-8")
-
     for md in [BOOK / "home.md", *sorted((BOOK / "chapters").glob("*.md"))]:
         body = md.read_text(encoding="utf-8")
         for word in FORBIDDEN_TEXT:
@@ -679,8 +750,15 @@ def main():
     total_minutes = sum(chapter["minutes"] for chapter in chapters)
     home_renderer = Render("glossary.html", BOOK / "home.md")
     home_body = (BOOK / "home.md").read_text(encoding="utf-8")
-    home_html = home_renderer.html_blocks(parse_blocks(home_body, BOOK / "home.md"))
+    home_blocks = parse_blocks(home_body, BOOK / "home.md")
+    check_output_hosts(home_blocks, BOOK / "home.md")
+    home_html = home_renderer.html_blocks(home_blocks)
     home_renderer.finish_checks(False)
+    files = {
+        "assets/site.css": (SITE / "site.css").read_text(encoding="utf-8"),
+        "assets/site.js": (SITE / "site.js").read_text(encoding="utf-8"),
+        ".nojekyll": "",
+    }
     catalog = [
         f'<p id="progress-count" data-total="{len(chapters)}">0 / {len(chapters)} 章</p>',
         f"<p>21章の目安は、合計 {total_minutes} 分です。手を動かす時間を含みます。</p>",
@@ -719,9 +797,8 @@ def main():
     index_toc = list(home_renderer.toc)
     index_toc.append((2, "章の流れ", "章の流れ"))
     index_toc.extend(part_toc)
-    (DOCS / "index.html").write_text(
-        page_shell("DockerとKubernetesの教科書", index_main, 0, "", index_toc, part_titles, chapters, written),
-        encoding="utf-8",
+    files["index.html"] = page_shell(
+        "DockerとKubernetesの教科書", index_main, 0, "", index_toc, part_titles, chapters, written
     )
 
     for chapter in chapters:
@@ -737,18 +814,15 @@ def main():
             + f'<label class="done"><input type="checkbox" data-done="{chapter["id"]}">この章を読み終えた</label>'
             + pager(chapter, chapters, written)
         )
-        (DOCS / "chapters" / f"{chapter['id']}.html").write_text(
-            page_shell(
-                f'第{int(chapter["id"])}章 {chapter["title"]}',
-                main,
-                1,
-                chapter["id"],
-                item["toc"],
-                part_titles,
-                chapters,
-                written,
-            ),
-            encoding="utf-8",
+        files[f"chapters/{chapter['id']}.html"] = page_shell(
+            f'第{int(chapter["id"])}章 {chapter["title"]}',
+            main,
+            1,
+            chapter["id"],
+            item["toc"],
+            part_titles,
+            chapters,
+            written,
         )
 
     glossary_items = []
@@ -762,9 +836,8 @@ def main():
         )
     glossary_main = "<h1>用語集</h1><p>各章のまとめで説明した用語です。本文のリンクからも開けます。</p>" + "".join(glossary_items)
     glossary_toc = [(2, term, f"term-{term}") for term, _, _ in all_terms]
-    (DOCS / "glossary.html").write_text(
-        page_shell("用語集", glossary_main, 0, "", glossary_toc, part_titles, chapters, written),
-        encoding="utf-8",
+    files["glossary.html"] = page_shell(
+        "用語集", glossary_main, 0, "", glossary_toc, part_titles, chapters, written
     )
 
     command_html = ["<h1>コマンド早見表</h1><p>各章の本文に出るコマンドです。ファイルの中身は載せていません。</p>"]
@@ -779,9 +852,8 @@ def main():
                 f'<h2 id="{slug}">第{int(chapter["id"])}章 <a href="chapters/{chapter["id"]}.html">{html.escape(chapter["title"])}</a></h2>'
             )
         command_html.append(f"<pre data-lang=\"text\"><code>{html.escape(command)}</code></pre>")
-    (DOCS / "commands.html").write_text(
-        page_shell("コマンド早見表", "".join(command_html), 0, "", command_toc, part_titles, chapters, written),
-        encoding="utf-8",
+    files["commands.html"] = page_shell(
+        "コマンド早見表", "".join(command_html), 0, "", command_toc, part_titles, chapters, written
     )
 
     search = [{
@@ -806,7 +878,7 @@ def main():
             "text": written[chapter["id"]]["plain"],
         })
     payload = json.dumps(search, ensure_ascii=False)
-    (DOCS / "assets" / "search-index.js").write_text("window.SEARCH_INDEX = " + payload + ";\n", encoding="utf-8")
+    files["assets/search-index.js"] = "window.SEARCH_INDEX = " + payload + ";\n"
 
     lines = [
         "# 未確認のコマンド",
@@ -830,6 +902,7 @@ def main():
         lines.append(item["command"])
         lines.append("```")
         lines.append("")
+    publish_site(files)
     (ROOT / "UNVERIFIED.md").write_text("\n".join(lines), encoding="utf-8")
     print(f"built {len(written)} chapters, {len(all_unverified)} unverified commands")
 
