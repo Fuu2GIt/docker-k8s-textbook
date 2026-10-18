@@ -26,6 +26,7 @@ FORBIDDEN_HEADINGS = [
     "確認したバージョン",
     "たとえ話",
 ]
+FORBIDDEN_TEXT = ["楓真", "最初の読者"]
 COMMAND_PHRASES = ["何をするコマンドか", "期待する出力", "出力が違うとき"]
 
 
@@ -668,6 +669,12 @@ def main():
     shutil.copy(SITE / "site.css", DOCS / "assets" / "site.css")
     shutil.copy(SITE / "site.js", DOCS / "assets" / "site.js")
     (DOCS / ".nojekyll").write_text("", encoding="utf-8")
+
+    for md in [BOOK / "home.md", *sorted((BOOK / "chapters").glob("*.md"))]:
+        body = md.read_text(encoding="utf-8")
+        for word in FORBIDDEN_TEXT:
+            if word in body:
+                raise BuildError(f"{md}: 本文に「{word}」は書けません")
 
     total_minutes = sum(chapter["minutes"] for chapter in chapters)
     home_renderer = Render("glossary.html", BOOK / "home.md")
