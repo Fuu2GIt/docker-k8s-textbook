@@ -44,6 +44,10 @@ ALLOWED_OUTPUT_HOSTS = frozenset({
     "www.ubuntu.com",
 })
 OUTPUT_URL_RE = re.compile(r"https?://[^\s\"'`<>)]+", re.IGNORECASE)
+# 1段落に置ける外部リンクの本数。出典を1文へ詰め込まないため。
+# 既存の章で一番多い段落は2本なので、3本以上を失敗にする。
+MAX_EXTERNAL_LINKS_PER_PARAGRAPH = 2
+MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)]+)\)")
 
 
 class BuildError(Exception):
@@ -668,6 +672,21 @@ def check_output_hosts(blocks, path):
                 raise BuildError(f"{path}: 出力例に許可していないホストがあります: {match.group(0)}")
 
 
+def check_paragraph_external_links(blocks, path):
+    """段落（type p）の http(s) リンク本数。コードブロック内のURL検査と同じく、docs/ 置換前に呼ぶ。"""
+    for block in iter_blocks(blocks, path):
+        if block["type"] != "p":
+            continue
+        count = 0
+        for _label, url in MARKDOWN_LINK_RE.findall(block["text"]):
+            if url.strip().startswith(("http://", "https://")):
+                count += 1
+        if count > MAX_EXTERNAL_LINKS_PER_PARAGRAPH:
+            raise BuildError(
+                f"{path}: 1段落の外部リンクは{MAX_EXTERNAL_LINKS_PER_PARAGRAPH}本までです（{count}本）"
+            )
+
+
 def publish_site(files):
     """検査が通ったあとで docs/ を置き換える。途中で失敗しても、今の docs/ は残す。"""
     staging = ROOT / ".docs-build"
@@ -714,6 +733,7 @@ def main():
             raise BuildError(f"{path}: outline.json と front matter が一致しません")
         blocks = parse_blocks(body, path)
         check_output_hosts(blocks, path)
+        check_paragraph_external_links(blocks, path)
         concepts = require_chapter_shape(blocks, path, meta.get("concepts", ""))
         terms = summary_terms(blocks, path)
         for term, _ in terms:
@@ -752,6 +772,7 @@ def main():
     home_body = (BOOK / "home.md").read_text(encoding="utf-8")
     home_blocks = parse_blocks(home_body, BOOK / "home.md")
     check_output_hosts(home_blocks, BOOK / "home.md")
+    check_paragraph_external_links(home_blocks, BOOK / "home.md")
     home_html = home_renderer.html_blocks(home_blocks)
     home_renderer.finish_checks(False)
     files = {
