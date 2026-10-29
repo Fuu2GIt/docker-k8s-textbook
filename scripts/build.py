@@ -109,10 +109,11 @@ def parse_range(lines, start, end, path):
             continue
         if re.match(r"\d+\. ", line):
             items = []
+            start = int(re.match(r"(\d+)\. ", line).group(1))
             while i < end and re.match(r"\d+\. ", lines[i]):
                 items.append(re.sub(r"^\d+\. ", "", lines[i]))
                 i += 1
-            blocks.append({"type": "ol", "items": items})
+            blocks.append({"type": "ol", "items": items, "start": start})
             continue
         if line.startswith("- "):
             items = []
@@ -311,7 +312,8 @@ class Render:
         if kind == "ol":
             self.add_plain(" ".join(block["items"]))
             items = "".join(f"<li>{render_inline(item, self.glossary_href)}</li>" for item in block["items"])
-            return f"<ol>{items}</ol>"
+            start = f' start="{block["start"]}"' if block.get("start", 1) != 1 else ""
+            return f"<ol{start}>{items}</ol>"
         if kind == "quote":
             self.add_plain(block["text"])
             return f"<blockquote><p>{render_inline(block['text'], self.glossary_href)}</p></blockquote>"
