@@ -26,7 +26,7 @@ FORBIDDEN_HEADINGS = [
     "確認したバージョン",
     "たとえ話",
 ]
-FORBIDDEN_TEXT = ["楓真", "最初の読者"]
+FORBIDDEN_TEXT = ["楓真", "最初の読者", "この出力は、2026-10-16 にこの執筆環境で実行した結果"]
 COMMAND_PHRASES = ["何をするコマンドか", "期待する出力", "出力が違うとき"]
 # 出力例（```text）に書いてよいURLのホスト。著者のパソコンだけが持つ配布元は入れない。
 ALLOWED_OUTPUT_HOSTS = frozenset({
