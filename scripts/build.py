@@ -26,7 +26,8 @@ FORBIDDEN_HEADINGS = [
     "確認したバージョン",
     "たとえ話",
 ]
-FORBIDDEN_TEXT = ["楓真", "最初の読者", "この出力は、2026-10-16 にこの執筆環境で実行した結果"]
+FORBIDDEN_TEXT = ["楓真", "最初の読者", "この執筆環境で実行し"]
+FORBIDDEN_PATTERNS = [(re.compile(r"20\d\d-\d\d-\d\d"), "実行日などの日付")]
 COMMAND_PHRASES = ["何をするコマンドか", "期待する出力", "出力が違うとき"]
 # 出力例（```text）に書いてよいURLのホスト。著者のパソコンだけが持つ配布元は入れない。
 ALLOWED_OUTPUT_HOSTS = frozenset({
@@ -748,6 +749,10 @@ def main():
         for word in FORBIDDEN_TEXT:
             if word in body:
                 raise BuildError(f"{md}: 本文に「{word}」は書けません")
+        for pattern, label in FORBIDDEN_PATTERNS:
+            found = pattern.search(body)
+            if found:
+                raise BuildError(f"{md}: 本文に{label}は書けません: {found.group(0)}")
 
     total_minutes = sum(chapter["minutes"] for chapter in chapters)
     home_renderer = Render("glossary.html", BOOK / "home.md")
